@@ -1,0 +1,27 @@
+[project]
+name = "boxoffice-brain"
+version = "0.1.0"
+description = "A cinema-catalogue analytics agent on Gemini/ADK that runs read-only ClickHouse SQL through the official ClickHouse MCP server, grounds every claim in retrieved rows, and abstains when the data cannot support an answer."
+requires-python = ">=3.10"
+dependencies = [
+    "agent-core",        # local: pip install -e ../../packages/agent-core
+]
+
+[project.optional-dependencies]
+# The official ClickHouse MCP server is launched with `uvx mcp-clickhouse`, so it
+# is not a Python dependency of this package. Only the MCP client is.
+mcp = ["mcp>=1.9"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+
+[tool.setuptools.package-data]
+boxoffice = ["fixtures/*.csv", "fixtures/*.md", "ui/*.html"]
+
+[project.scripts]
+boxoffice = "boxoffice.main:cli"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["boxoffice*"]
