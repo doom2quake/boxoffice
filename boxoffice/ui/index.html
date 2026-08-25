@@ -1,0 +1,994 @@
+<title>BoxOffice Brain, grounded cinema analytics on ClickHouse</title>
+<style>
+  :root {
+    --bg: #0B0B0C; --panel: #141416; --panel2: #1a1a1d; --line: #2a2a2e;
+    --text: #F2F1EC; --muted: #9A9A92; --faint: #5f5f58;
+    --yellow: #FFD634; --yellow-dim: #7a6a1e; --red: #E5484D; --green: #46C98B;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; } html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 36px 24px 64px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--yellow); margin: 0 0 10px; }
+  h1 { font-size: clamp(28px,4.6vw,42px); line-height: 1.05; letter-spacing: -.02em; margin: 0; font-weight: 800; text-wrap: balance; }
+  .thesis { color: var(--muted); font-size: 17px; max-width: 64ch; margin: 14px 0 20px; }
+
+  .titlebar { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .helpbtn { font-family: var(--mono); font-size: 13px; color: var(--muted); background: #0f0f11; border: 1px solid var(--line); border-radius: 999px; width: 30px; height: 30px; cursor: pointer; flex: 0 0 auto; line-height: 1; }
+  .helpbtn:hover, .helpbtn[aria-expanded="true"] { color: var(--yellow); border-color: var(--yellow-dim); }
+
+  /* --- mode banner: the page must never look live when it is not --- */
+  .mode { display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 0 0 18px; background: var(--panel); }
+  .mode .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin-top: 7px; flex: 0 0 auto; }
+  .mode .txt { min-width: 0; }
+  .mode .hd { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .mode .bd { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+  .mode .bd b { color: var(--text); font-weight: 600; }
+  .mode.live { border-color: #2c4a38; background: linear-gradient(180deg,#0f1a14,#141416); }
+  .mode.live .dot { background: var(--green); box-shadow: 0 0 0 4px rgba(70,201,139,.15); }
+  .mode.live .hd { color: var(--green); }
+  .mode.recorded { border-color: var(--yellow-dim); background: linear-gradient(180deg,#191708,#141416); }
+  .mode.recorded .dot { background: var(--yellow); }
+  .mode.recorded .hd { color: var(--yellow); }
+
+  .legend { display: none; margin: 0 0 20px; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .legend.show { display: block; }
+  .legend h2 { font-size: 13px; font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--yellow); margin: 0 0 10px; }
+  .legend ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .legend li { color: var(--muted); font-size: 13.5px; padding-left: 20px; position: relative; }
+  .legend li b { color: var(--text); font-weight: 600; }
+  .legend li::before { content: ""; position: absolute; left: 0; top: 7px; width: 8px; height: 8px; border-radius: 2px; background: var(--yellow-dim); }
+
+  .ask { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  select { flex: 1 1 340px; background: #0f0f11; border: 1px solid var(--line); color: var(--text); font-family: var(--sans); font-size: 15px; padding: 12px 14px; border-radius: 9px; }
+  button.ask-btn { font-family: var(--sans); font-weight: 700; font-size: 15px; background: var(--yellow); color: #201c00; border: 0; border-radius: 9px; padding: 12px 24px; cursor: pointer; }
+  button.ask-btn:hover { background: #ffe066; }
+  button.ghost { font-family: var(--mono); font-size: 13px; color: var(--muted); background: #0f0f11; border: 1px solid var(--line); border-radius: 9px; padding: 11px 16px; cursor: pointer; }
+  button.ghost:hover { color: var(--yellow); border-color: var(--yellow-dim); }
+  button:focus-visible, select:focus-visible, .helpbtn:focus-visible, a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+  button[disabled] { opacity: .5; cursor: default; }
+
+  .how { margin: 28px 0 8px; border: 1px solid var(--line); background: linear-gradient(180deg,#111113,#0e0e10); border-radius: 12px; padding: 18px 20px 8px; }
+  .how h2 { font-size: 12px; font-family: var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+  .how .cap { color: var(--faint); font-size: 12.5px; margin: 0 0 8px; font-family: var(--mono); }
+  .diagram-scroll { overflow-x: auto; }
+  svg.pipeline { display: block; width: 100%; min-width: 660px; height: auto; }
+  .nlbl { font-family: var(--sans); font-weight: 700; font-size: 12.5px; fill: var(--text); }
+  .nsub { font-family: var(--mono); font-size: 9.5px; fill: var(--muted); letter-spacing: .02em; }
+  .elbl { font-family: var(--mono); font-size: 9px; fill: var(--faint); letter-spacing: .04em; }
+
+  .run { margin-top: 22px; display: none; }
+  .run.show { display: block; }
+  .step { border-left: 2px solid var(--line); padding: 2px 0 18px 18px; margin-left: 6px; position: relative; opacity: 0; transform: translateX(-4px); animation: in .3s forwards; }
+  .step::before { content: ""; position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--yellow); }
+  @keyframes in { to { opacity: 1; transform: none; } }
+  .step .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .sql { font-family: var(--mono); font-size: 12.5px; background: #101012; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-top: 8px; white-space: pre-wrap; color: #d8e0c8; overflow-x: auto; }
+  .trace { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .trace b { color: var(--yellow); font-variant-numeric: tabular-nums; }
+
+  .answer { margin-top: 8px; border: 1px solid var(--yellow-dim); background: linear-gradient(180deg, #191708, #141416); border-radius: 10px; padding: 16px 18px; }
+  .answer.abstain { border-color: #5c2a2b; background: linear-gradient(180deg, #1c1010, #141416); }
+  .answer .atag { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--yellow); }
+  .answer.abstain .atag { color: var(--red); }
+  .answer p { margin: 8px 0 0; font-size: 15px; white-space: pre-wrap; }
+
+  .grids { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 24px; }
+  @media (min-width: 780px){ .grids { grid-template-columns: 1fr 1fr; align-items: start; } }
+  .card { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 0; overflow: hidden; }
+  .card > .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .card > .head h2 { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--yellow); margin: 0; }
+  .card > .head .meta { font-family: var(--mono); font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .card > .body { padding: 12px 16px 16px; }
+
+  .log .empty, .arts .empty { color: var(--faint); font-family: var(--mono); font-size: 12.5px; padding: 6px 0; }
+  .logrow { display: grid; grid-template-columns: 62px 1fr auto; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid #202024; opacity: 0; transform: translateY(3px); animation: login .28s forwards; }
+  .logrow:last-child { border-bottom: 0; }
+  @keyframes login { to { opacity: 1; transform: none; } }
+  .logrow .tick { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--green); }
+  .logrow.reject .tick, .logrow.error .tick { color: var(--red); }
+  .logrow.wait .tick { color: var(--yellow); }
+  .logrow .txt { min-width: 0; }
+  .logrow .k { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .logrow .d { font-size: 13px; color: var(--text); margin-top: 1px; overflow-wrap: anywhere; }
+  .logrow .t { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .subhead { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); margin: 14px 0 4px; border-top: 1px solid var(--line); padding-top: 12px; }
+
+  .arts { display: grid; gap: 12px; }
+  .art { border: 1px solid var(--line); background: #0f0f11; border-radius: 9px; }
+  .art .ahead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .art .ahead .name { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .art .acts { display: flex; gap: 6px; }
+  .art .acts button { font-family: var(--mono); font-size: 11px; color: var(--muted); background: #141416; border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; cursor: pointer; }
+  .art .acts button:hover { color: var(--yellow); border-color: var(--yellow-dim); }
+  .art .acts button.done { color: var(--green); border-color: #2c4a38; }
+  .art pre, .art .val { margin: 0; font-family: var(--mono); font-size: 12px; color: #d8e0c8; padding: 11px 12px; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; max-height: 230px; overflow-y: auto; }
+  .art .val { color: var(--text); }
+  .art.abstain .val { color: #f0c9c9; }
+
+  footer { margin-top: 40px; color: var(--faint); font-size: 12px; font-family: var(--mono); line-height: 1.8; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+</style>
+<div class="wrap">
+  <div class="titlebar">
+    <p class="eyebrow">BoxOffice Brain &middot; ClickHouse-grounded</p>
+    <button class="helpbtn" id="helpBtn" aria-expanded="false" aria-controls="legend" title="What am I looking at?" aria-label="Toggle the legend explaining this demo">?</button>
+  </div>
+  <h1>Ask the warehouse. Get the numbers, or an honest "I can't."</h1>
+  <p class="thesis">A cinema-catalogue analytics agent that writes read-only ClickHouse SQL, runs it through ClickHouse's own MCP server, shows the exact query and what it scanned, and grounds every claim in rows it actually retrieved. When the data can't answer, it abstains instead of guessing.</p>
+
+  <div class="mode" id="mode">
+    <span class="dot"></span>
+    <span class="txt"><span class="hd" id="modeHd">checking backend</span><span class="bd" id="modeBd">Looking for <b>boxoffice serve</b> on this origin.</span></span>
+  </div>
+
+  <div class="legend" id="legend" role="region" aria-label="Legend">
+    <h2>What am I looking at?</h2>
+    <ul>
+      <li><b>Live mode</b> means this page is talking to <code>boxoffice serve</code>: pressing Ask runs the real Python pipeline and every panel below is filled from that run's return value.</li>
+      <li><b>Recorded mode</b> means the page was opened as a file with no backend. It then replays a transcript that <code>scripts/record_transcript.py</code> captured from a real run, and says so in the banner. Nothing here is hand-written output.</li>
+      <li><b>Agent activity log</b> lists the run's events and the guardrail audit trail the state store recorded: read-only screen, data-scope allowlist, and the action limiter.</li>
+      <li><b>Grounding trace</b> is the evidence: the exact SQL, rows read, bytes scanned, latency, and which transport served it.</li>
+      <li><b>Abstain</b> is a feature: when the retrieved rows can't support the question, or the query failed, the agent says so instead of inventing a number.</li>
+    </ul>
+  </div>
+
+  <div class="ask">
+    <label class="sr" for="q">Choose a question</label>
+    <select id="q"></select>
+    <button class="ask-btn" id="askBtn">Ask</button>
+    <button class="ghost" id="replayBtn" title="Run the same question again">Replay</button>
+    <button class="ghost" id="resetBtn" title="Clear the run">Reset</button>
+  </div>
+
+  <section class="how" aria-label="How it works">
+    <h2>How it works</h2>
+    <p class="cap">plain-English question &rarr; Gemini/ADK supervisor &rarr; three skills &rarr; guardrails &rarr; official ClickHouse MCP server</p>
+    <div class="diagram-scroll">
+      <svg class="pipeline" viewBox="0 0 900 300" role="img" aria-label="Pipeline: a studio question goes to a Gemini/ADK supervisor, which delegates to a Planner (describe_tables), an Analyst (writes read-only SQL and calls run_clickhouse_sql), through the read-only screen, data-scope allowlist and ActionLimiter guardrails, out to the official ClickHouse MCP server and ClickHouse Cloud (or the offline SQLite snapshot), which returns rows and a grounding trace, then an Answer Writer produces a grounded answer or abstains.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#5f5f58"/>
+          </marker>
+        </defs>
+        <g fill="none" stroke="#3a3a3e" stroke-width="1.5">
+          <path d="M148 60 H196" marker-end="url(#arrow)"/>
+          <path d="M344 60 H392" marker-end="url(#arrow)"/>
+          <path d="M540 60 H588" marker-end="url(#arrow)"/>
+          <path d="M686 90 V126" marker-end="url(#arrow)"/>
+          <path d="M686 190 V220" marker-end="url(#arrow)"/>
+          <path d="M588 258 H360 V210 H392" marker-end="url(#arrow)"/>
+          <path d="M296 240 H196" marker-end="url(#arrow)"/>
+        </g>
+        <text class="elbl" x="216" y="52">delegates</text>
+        <text class="elbl" x="418" y="52">plan</text>
+        <text class="elbl" x="694" y="112">run_clickhouse_sql</text>
+        <text class="elbl" x="694" y="210">pass</text>
+        <text class="elbl" x="372" y="276">rows + grounding trace</text>
+        <text class="elbl" x="205" y="232">answer</text>
+
+        <g>
+          <rect x="12" y="38" width="136" height="44" rx="9" fill="#141416" stroke="#2a2a2e"/>
+          <text class="nlbl" x="30" y="58">Studio question</text>
+          <text class="nsub" x="30" y="73">plain English</text>
+        </g>
+        <g>
+          <rect x="196" y="34" width="148" height="52" rx="9" fill="#17170a" stroke="#7a6a1e"/>
+          <text class="nlbl" x="212" y="55">Gemini/ADK</text>
+          <text class="nlbl" x="212" y="71" fill="#FFD634">supervisor</text>
+        </g>
+        <g>
+          <rect x="392" y="38" width="148" height="44" rx="9" fill="#141416" stroke="#2a2a2e"/>
+          <text class="nlbl" x="408" y="58">Planner</text>
+          <text class="nsub" x="408" y="73">describe_tables</text>
+        </g>
+        <g>
+          <rect x="588" y="38" width="148" height="52" rx="9" fill="#141416" stroke="#2a2a2e"/>
+          <text class="nlbl" x="604" y="59">Analyst</text>
+          <text class="nsub" x="604" y="74">read-only SQL</text>
+        </g>
+        <g>
+          <rect x="596" y="126" width="180" height="64" rx="9" fill="#1c1010" stroke="#5c2a2b"/>
+          <text class="nlbl" x="610" y="146" fill="#E5484D">Guardrails</text>
+          <text class="nsub" x="610" y="160">READ_ONLY_SQL</text>
+          <text class="nsub" x="610" y="172">QUERY_SCOPE allowlist</text>
+          <text class="nsub" x="610" y="184">ACTION_LIMITER</text>
+        </g>
+        <g>
+          <rect x="588" y="220" width="196" height="58" rx="9" fill="#17170a" stroke="#7a6a1e"/>
+          <ellipse cx="606" cy="241" rx="9" ry="4" fill="none" stroke="#FFD634" stroke-width="1.3"/>
+          <path d="M597 241 V260 a9 4 0 0 0 18 0 V241" fill="none" stroke="#FFD634" stroke-width="1.3"/>
+          <text class="nlbl" x="624" y="243" fill="#FFD634">ClickHouse MCP server</text>
+          <text class="nsub" x="624" y="260">official mcp-clickhouse &rarr; ClickHouse</text>
+        </g>
+        <g>
+          <rect x="196" y="184" width="148" height="52" rx="9" fill="#141416" stroke="#2a2a2e"/>
+          <text class="nlbl" x="212" y="205">Answer Writer</text>
+          <text class="nsub" x="212" y="221">grounded, or abstain</text>
+        </g>
+        <g>
+          <rect x="12" y="176" width="160" height="30" rx="7" fill="#191708" stroke="#7a6a1e"/>
+          <text class="nsub" x="26" y="195" fill="#FFD634">grounded answer + trace</text>
+          <rect x="12" y="216" width="160" height="30" rx="7" fill="#1c1010" stroke="#5c2a2b"/>
+          <text class="nsub" x="26" y="235" fill="#E5484D">abstain: insufficient data</text>
+          <path d="M172 191 H188 V210" fill="none" stroke="#3a3a3e" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <path d="M172 231 H184 V214" fill="none" stroke="#3a3a3e" stroke-width="1.5" marker-end="url(#arrow)"/>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <div class="run" id="run"></div>
+
+  <div class="grids">
+    <section class="card" aria-label="Agent activity log">
+      <div class="head"><h2>Agent activity log</h2><span class="meta" id="logMeta"></span></div>
+      <div class="body"><div class="log" id="log"><div class="empty">Press Ask to trace the run.</div></div></div>
+    </section>
+    <section class="card" aria-label="Artifacts">
+      <div class="head"><h2>Artifacts</h2><span class="meta">copy &middot; download</span></div>
+      <div class="body"><div class="arts" id="arts"><div class="empty">The answer, the exact SQL, and the grounding trace appear here after a run.</div></div></div>
+    </section>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+<script>
+/* == TRANSCRIPT:BEGIN (generated by scripts/record_transcript.py) == */
+  var TRANSCRIPT = {
+  "recorded_at": "2026-08-23 21:48:56 +0100",
+  "transport": "offline",
+  "scenarios": {
+    "grounded": {
+      "question": "Which genres underperformed in 1999 versus 1998, and which titles dragged the worst one down?",
+      "result": {
+        "answer": "Genres whose mean rating fell from 1998 to 1999 (12 of 18 genres with enough titles):\n  War: mean rating 6.08 in 1999 vs 6.86 in 1998 (delta -0.78, 28 vs 24 rated titles)\n  Short: mean rating 6.19 in 1999 vs 6.67 in 1998 (delta -0.48, 441 vs 327 rated titles)\n  Musical: mean rating 5.80 in 1999 vs 6.26 in 1998 (delta -0.46, 26 vs 20 rated titles)\n  Animation: mean rating 6.15 in 1999 vs 6.61 in 1998 (delta -0.46, 100 vs 78 rated titles)\n  Music: mean rating 6.38 in 1999 vs 6.58 in 1998 (delta -0.19, 24 vs 26 rated titles)\nWorst: War.\nLowest-rated War titles of 1999: Active Stealth (3.00); Storm Catcher (3.60); Cetverored (3.80). These titles sit inside the genre and year named above; that is an association within the same cohort, not a demonstrated cause.",
+        "abstained": false,
+        "error": null,
+        "traces": [
+          {
+            "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 1999 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 1998 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 1999 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 1998 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (1999, 1998) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 1999 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 1998 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
+            "rows_read": 11239,
+            "bytes_read": 244796,
+            "elapsed_ms": 8.6,
+            "source": "offline_snapshot",
+            "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
+            "note": "mean rating by genre, 1999 vs 1998",
+            "transport": "offline"
+          },
+          {
+            "sql": "SELECT m.name AS title, m.year AS year, m.rank AS rating\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE g.genre = 'War' AND m.year = 1999 AND m.rank > 0\nORDER BY m.rank ASC, m.name ASC\nLIMIT 5",
+            "rows_read": 11239,
+            "bytes_read": 244796,
+            "elapsed_ms": 2.8,
+            "source": "offline_snapshot",
+            "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
+            "note": "lowest-rated War titles in 1999",
+            "transport": "offline"
+          }
+        ],
+        "events": [
+          {
+            "kind": "supervisor",
+            "status": "ok",
+            "label": "run started",
+            "detail": "transport=offline run=run-20260823T204856-3d539b"
+          },
+          {
+            "kind": "planner",
+            "status": "ok",
+            "label": "template genre_underperformance",
+            "detail": "{\"current_year\": 1999, \"prior_year\": 1998, \"min_titles\": 20}"
+          },
+          {
+            "kind": "analyst",
+            "status": "ok",
+            "label": "mean rating by genre, 1999 vs 1998",
+            "detail": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 1999 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 1998 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 1999 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 1998 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (1999, 1998) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 1999 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 1998 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
+            "grounding": {
+              "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 1999 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 1998 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 1999 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 1998 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (1999, 1998) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 1999 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 1998 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
+              "rows_read": 11239,
+              "bytes_read": 244796,
+              "elapsed_ms": 8.6,
+              "source": "offline_snapshot",
+              "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
+              "note": "mean rating by genre, 1999 vs 1998",
+              "transport": "offline"
+            },
+            "row_count": 18
+          },
+          {
+            "kind": "analyst",
+            "status": "ok",
+            "label": "lowest-rated War titles in 1999",
+            "detail": "SELECT m.name AS title, m.year AS year, m.rank AS rating\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE g.genre = 'War' AND m.year = 1999 AND m.rank > 0\nORDER BY m.rank ASC, m.name ASC\nLIMIT 5",
+            "grounding": {
+              "sql": "SELECT m.name AS title, m.year AS year, m.rank AS rating\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE g.genre = 'War' AND m.year = 1999 AND m.rank > 0\nORDER BY m.rank ASC, m.name ASC\nLIMIT 5",
+              "rows_read": 11239,
+              "bytes_read": 244796,
+              "elapsed_ms": 2.8,
+              "source": "offline_snapshot",
+              "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
+              "note": "lowest-rated War titles in 1999",
+              "transport": "offline"
+            },
+            "row_count": 5
+          },
+          {
+            "kind": "answer",
+            "status": "grounded",
+            "label": "12 declining genres, worst War",
+            "detail": "every number above traces to a retrieved row"
+          }
+        ],
+        "query_name": "genre_underperformance",
+        "rows": [
+          {
+            "genre": "War",
+            "rating_current": 6.075000005108969,
+            "rating_prior": 6.858333329359691,
+            "titles_current": 28,
+            "titles_prior": 24
+          },
+          {
+            "genre": "Short",
+            "rating_current": 6.185034024201824,
+            "rating_prior": 6.667584103546376,
+            "titles_current": 441,
+            "titles_prior": 327
+          },
+          {
+            "genre": "Musical",
+            "rating_current": 5.8000000073359566,
+            "rating_prior": 6.259999966621399,
+            "titles_current": 26,
+            "titles_prior": 20
+          },
+          {
+            "genre": "Animation",
+            "rating_current": 6.151000022888184,
+            "rating_prior": 6.606410261912224,
+            "titles_current": 100,
+            "titles_prior": 78
+          },
+          {
+            "genre": "Music",
+            "rating_current": 6.383333325386047,
+            "rating_prior": 6.576923095262968,
+            "titles_current": 24,
+            "titles_prior": 26
+          },
+          {
+            "genre": "Comedy",
+            "rating_current": 5.70326894264873,
+            "rating_prior": 5.850722020498682,
+            "titles_current": 673,
+            "titles_prior": 554
+          },
+          {
+            "genre": "Romance",
+            "rating_current": 5.890134522733132,
+            "rating_prior": 5.977511962635095,
+            "titles_current": 223,
+            "titles_prior": 209
+          },
+          {
+            "genre": "Documentary",
+            "rating_current": 6.623076921242934,
+            "rating_prior": 6.7062500069538755,
+            "titles_current": 195,
+            "titles_prior": 144
+          },
+          {
+            "genre": "Family",
+            "rating_current": 5.409574488376049,
+            "rating_prior": 5.480555560853746,
+            "titles_current": 94,
+            "titles_prior": 72
+          },
+          {
+            "genre": "Sci-Fi",
+            "rating_current": 5.1542372844986994,
+            "rating_prior": 5.198571418012891,
+            "titles_current": 59,
+            "titles_prior": 70
+          },
+          {
+            "genre": "Action",
+            "rating_current": 5.2413793126937795,
+            "rating_prior": 5.258064514847212,
+            "titles_current": 203,
+            "titles_prior": 186
+          },
+          {
+            "genre": "Crime",
+            "rating_current": 5.814876049018103,
+            "rating_prior": 5.829411753085481,
+            "titles_current": 121,
+            "titles_prior": 119
+          }
+        ],
+        "run_id": "run-20260823T204856-3d539b",
+        "state_backend": "in-memory (explicit opt-in)",
+        "status": "completed",
+        "guardrails": [
+          {
+            "name": "READ_ONLY_SQL",
+            "outcome": "pass",
+            "detail": "mean rating by genre, 1999 vs 1998",
+            "at": "2026-08-23T20:48:56.343869+00:00"
+          },
+          {
+            "name": "QUERY_SCOPE",
+            "outcome": "pass",
+            "detail": "tables within ['imdb.actors', 'imdb.directors', 'imdb.genres']...",
+            "at": "2026-08-23T20:48:56.344484+00:00"
+          },
+          {
+            "name": "ACTION_LIMITER",
+            "outcome": "pass",
+            "detail": "allowed (1/4 this cycle)",
+            "at": "2026-08-23T20:48:56.344543+00:00"
+          },
+          {
+            "name": "READ_ONLY_SQL",
+            "outcome": "pass",
+            "detail": "lowest-rated War titles in 1999",
+            "at": "2026-08-23T20:48:56.445018+00:00"
+          },
+          {
+            "name": "QUERY_SCOPE",
+            "outcome": "pass",
+            "detail": "tables within ['imdb.actors', 'imdb.directors', 'imdb.genres']...",
+            "at": "2026-08-23T20:48:56.445386+00:00"
+          },
+          {
+            "name": "ACTION_LIMITER",
+            "outcome": "pass",
+            "detail": "allowed (2/4 this cycle)",
+            "at": "2026-08-23T20:48:56.445606+00:00"
+          }
+        ],
+        "recurrence": null,
+        "transport": "offline",
+        "question": "Which genres underperformed in 1999 versus 1998, and which titles dragged the worst one down?"
+      }
+    },
+    "abstain_no_rows": {
+      "question": "Which genres underperformed in 2021 versus 2020?",
+      "result": {
+        "answer": "Insufficient comparable data to answer: the query ran successfully but returned no rows that answer it (mean rating by genre, 2021 vs 2020). Needed: imdb.movies rows with a non-zero rank for both years, joined to imdb.genres, with at least the minimum title count per genre.",
+        "abstained": true,
+        "error": null,
+        "traces": [
+          {
+            "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 2021 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 2020 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 2021 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 2020 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
+            "rows_read": 11239,
+            "bytes_read": 244796,
+            "elapsed_ms": 0.5,
+            "source": "offline_snapshot",
+            "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
+            "note": "mean rating by genre, 2021 vs 2020",
+            "transport": "offline"
+          }
+        ],
+        "events": [
+          {
+            "kind": "supervisor",
+            "status": "ok",
+            "label": "run started",
+            "detail": "transport=offline run=run-20260823T204856-1e7225"
+          },
+          {
+            "kind": "planner",
+            "status": "ok",
+            "label": "template genre_underperformance",
+            "detail": "{\"current_year\": 2021, \"prior_year\": 2020, \"min_titles\": 20}"
+          },
+          {
+            "kind": "analyst",
+            "status": "ok",
+            "label": "mean rating by genre, 2021 vs 2020",
+            "detail": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 2021 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 2020 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 2021 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 2020 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
+            "grounding": {
+              "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 2021 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 2020 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 2021 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 2020 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
+              "rows_read": 11239,
+              "bytes_read": 244796,
+              "elapsed_ms": 0.5,
+              "source": "offline_snapshot",
+              "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
+              "note": "mean rating by genre, 2021 vs 2020",
+              "transport": "offline"
+            },
+            "row_count": 0
+          },
+          {
+            "kind": "answer",
+            "status": "abstain",
+            "label": "0 comparable rows",
+            "detail": "the query executed and returned nothing that answers the question"
+          }
+        ],
+        "query_name": "genre_underperformance",
+        "rows": [],
+        "run_id": "run-20260823T204856-1e7225",
+        "state_backend": "in-memory (explicit opt-in)",
+        "status": "completed",
+        "guardrails": [
+          {
+            "name": "READ_ONLY_SQL",
+            "outcome": "pass",
+            "detail": "mean rating by genre, 2021 vs 2020",
+            "at": "2026-08-23T20:48:56.452174+00:00"
+          },
+          {
+            "name": "QUERY_SCOPE",
+            "outcome": "pass",
+            "detail": "tables within ['imdb.actors', 'imdb.directors', 'imdb.genres']...",
+            "at": "2026-08-23T20:48:56.452812+00:00"
+          },
+          {
+            "name": "ACTION_LIMITER",
+            "outcome": "pass",
+            "detail": "allowed (1/4 this cycle)",
+            "at": "2026-08-23T20:48:56.452980+00:00"
+          }
+        ],
+        "recurrence": null,
+        "transport": "offline",
+        "question": "Which genres underperformed in 2021 versus 2020?"
+      }
+    },
+    "abstain_unsupported": {
+      "question": "What was our total APAC streaming revenue last quarter?",
+      "result": {
+        "answer": "Insufficient comparable data to answer: no grounded query template matches this question.\nQuestions this agent can ground:\n  - which genres underperformed in <year> versus <prior year>\n  - the best rated titles of <year>\n  - how many titles each genre released in <year>",
+        "abstained": true,
+        "error": null,
+        "traces": [],
+        "events": [
+          {
+            "kind": "supervisor",
+            "status": "ok",
+            "label": "run started",
+            "detail": "transport=offline run=run-20260823T204856-35e193"
+          },
+          {
+            "kind": "router",
+            "status": "abstain",
+            "label": "no template matches",
+            "detail": "no grounded query template matches this question"
+          }
+        ],
+        "query_name": null,
+        "rows": [],
+        "run_id": "run-20260823T204856-35e193",
+        "state_backend": "in-memory (explicit opt-in)",
+        "status": "completed",
+        "guardrails": [],
+        "recurrence": null,
+        "transport": "offline",
+        "question": "What was our total APAC streaming revenue last quarter?"
+      }
+    }
+  },
+  "guardrail": {
+    "injection": {
+      "sql": "SELECT * FROM url('http://169.254.169.254/latest/meta-data/', 'CSV')",
+      "result": {
+        "status": "rejected",
+        "reason": "table function not allowed: url()",
+        "rows": [],
+        "row_count": 0,
+        "grounding": {
+          "sql": "SELECT * FROM url('http://169.254.169.254/latest/meta-data/', 'CSV')",
+          "guardrail": "QUERY_SCOPE",
+          "reason": "table function not allowed: url()"
+        }
+      }
+    },
+    "cross_database": {
+      "sql": "SELECT count(*) FROM system.users",
+      "result": {
+        "status": "rejected",
+        "reason": "table not in the allowed data scope: system.users",
+        "rows": [],
+        "row_count": 0,
+        "grounding": {
+          "sql": "SELECT count(*) FROM system.users",
+          "guardrail": "QUERY_SCOPE",
+          "reason": "table not in the allowed data scope: system.users"
+        }
+      }
+    },
+    "write": {
+      "sql": "DROP TABLE imdb.movies",
+      "result": {
+        "status": "rejected",
+        "reason": "only SELECT/WITH queries are allowed",
+        "rows": [],
+        "row_count": 0,
+        "grounding": {
+          "sql": "DROP TABLE imdb.movies",
+          "guardrail": "READ_ONLY_SQL",
+          "reason": "only SELECT/WITH queries are allowed"
+        }
+      }
+    }
+  }
+};
+  /* == TRANSCRIPT:END == */
+
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var reduce = function () { return matchMedia("(prefers-reduced-motion: reduce)").matches; };
+  var timers = [];
+  function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+  var QUESTIONS = [
+    { key: "grounded", label: "Which genres underperformed in 1999 versus 1998, and which titles dragged the worst one down?" },
+    { key: "abstain_no_rows", label: "Which genres underperformed in 2021 versus 2020?  (no rows in scope)" },
+    { key: "abstain_unsupported", label: "What was our total APAC streaming revenue last quarter?  (no template)" },
+    { key: "guardrail", label: "Guardrail: SELECT * FROM url('http://169.254.169.254/...')  (injected query)" }
+  ];
+
+  var MODE = { live: false, health: null };
+
+  function questionFor(key) {
+    if (TRANSCRIPT && TRANSCRIPT.scenarios && TRANSCRIPT.scenarios[key]) return TRANSCRIPT.scenarios[key].question;
+    var q = QUESTIONS.filter(function (x) { return x.key === key; })[0];
+    return q ? q.label.split("  (")[0] : key;
+  }
+
+  function fillSelect() {
+    var sel = $("q");
+    sel.innerHTML = "";
+    QUESTIONS.forEach(function (q) {
+      var o = document.createElement("option");
+      o.value = q.key; o.textContent = q.label;
+      sel.appendChild(o);
+    });
+  }
+
+  // --- mode banner -----------------------------------------------------------
+  function setMode(live, health) {
+    MODE.live = live; MODE.health = health;
+    var el = $("mode");
+    el.className = "mode " + (live ? "live" : "recorded");
+    if (live) {
+      $("modeHd").textContent = "live";
+      var ep = health.endpoint ? health.endpoint : "offline SQLite snapshot of the same ClickHouse tables";
+      var snap = health.snapshot ? " (" + health.snapshot.movies + " imdb.movies rows + " + health.snapshot.genres + " imdb.genres rows)" : "";
+      $("modeBd").innerHTML = "Connected to <b>boxoffice serve</b>. Pressing Ask runs the real pipeline. " +
+        "Transport <b>" + health.transport + "</b> &rarr; " + ep + snap + ".";
+    } else {
+      $("modeHd").textContent = "recorded transcript, not live";
+      if (TRANSCRIPT) {
+        $("modeBd").innerHTML = "No backend on this origin, so this page replays a transcript captured from a real run on <b>" +
+          TRANSCRIPT.recorded_at + "</b> (transport <b>" + TRANSCRIPT.transport + "</b>). " +
+          "Run <b>boxoffice serve</b> and reload for a live run.";
+      } else {
+        $("modeBd").innerHTML = "No backend and no recorded transcript is embedded. Run <b>python scripts/record_transcript.py</b>, or <b>boxoffice serve</b> for a live run.";
+      }
+    }
+    $("foot").innerHTML = (live
+      ? "Every panel below is filled from the JSON this page received from the running agent."
+      : "Every panel below is filled from a recorded run's JSON, replayed by the same renderer used in live mode.") +
+      "<br>Guardrails: READ_ONLY_SQL &middot; QUERY_SCOPE allowlist &middot; ACTION_LIMITER. Built on doom2quake agent-core.";
+  }
+
+  function probe() {
+    var timeout = new Promise(function (_, rej) { setTimeout(rej, 1500); });
+    Promise.race([fetch("api/health", { cache: "no-store" }), timeout])
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (h) { setMode(true, h); autorun(); })
+      .catch(function () { setMode(false, null); autorun(); });
+  }
+
+  // `?run=grounded` runs one scenario on load. Used for the docs screenshot and
+  // for a hands-free demo; it changes nothing about where the data comes from.
+  function autorun() {
+    var m = /[?&]run=([a-z_]+)/.exec(location.search || "");
+    if (!m) return;
+    $("q").value = m[1];
+    runScenario(m[1]);
+  }
+
+  // --- rendering (identical for live and recorded payloads) -------------------
+  function traceText(traces, meta) {
+    var out = [];
+    (traces || []).forEach(function (t, i) {
+      if (!t) return;
+      out.push("query " + (i + 1) + "  " + (t.note || ""));
+      out.push("  source      " + t.source);
+      out.push("  transport   " + (t.transport || ""));
+      if (t.endpoint) out.push("  endpoint    " + t.endpoint);
+      if (t.mcp_server) out.push("  mcp server  " + t.mcp_server + "  tool=" + t.mcp_tool);
+      if (t.mcp_tools_available) out.push("  mcp tools   " + t.mcp_tools_available.join(", "));
+      out.push("  rows_read   " + (t.rows_read === null || t.rows_read === undefined ? "n/a" : t.rows_read));
+      out.push("  bytes_read  " + (t.bytes_read === null || t.bytes_read === undefined ? "n/a" : t.bytes_read));
+      out.push("  elapsed_ms  " + t.elapsed_ms);
+      if (t.stats_note) out.push("  note        " + t.stats_note);
+      if (t.snapshot) out.push("  snapshot    " + t.snapshot);
+      out.push("");
+    });
+    out.push("run_id     " + meta.run_id);
+    out.push("status     " + meta.status);
+    out.push("abstained  " + meta.abstained);
+    out.push("error      " + (meta.error || "none"));
+    return out.join("\n");
+  }
+
+  function download(name, text) {
+    var blob = new Blob([text], { type: "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function copyText(text, btn) {
+    var old = btn.textContent;
+    var restore = function (ok) {
+      btn.textContent = ok ? "copied" : "copy failed";
+      if (ok) btn.classList.add("done");
+      later(function () { btn.textContent = old; btn.classList.remove("done"); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { restore(true); }, function () { legacyCopy(text, restore); });
+    } else { legacyCopy(text, restore); }
+  }
+  function legacyCopy(text, restore) {
+    try {
+      var ta = document.createElement("textarea"); ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta);
+      ta.focus(); ta.select(); var ok = document.execCommand("copy"); document.body.removeChild(ta); restore(ok);
+    } catch (e) { restore(false); }
+  }
+  function makeArtifact(name, value, opts) {
+    opts = opts || {};
+    var art = document.createElement("div");
+    art.className = "art" + (opts.abstain ? " abstain" : "");
+    var head = document.createElement("div"); head.className = "ahead";
+    var nm = document.createElement("span"); nm.className = "name"; nm.textContent = name;
+    var acts = document.createElement("div"); acts.className = "acts";
+    var copyBtn = document.createElement("button"); copyBtn.type = "button";
+    copyBtn.textContent = "copy"; copyBtn.setAttribute("aria-label", "Copy " + name);
+    copyBtn.addEventListener("click", function () { copyText(value, copyBtn); });
+    acts.appendChild(copyBtn);
+    if (opts.downloadName) {
+      var dl = document.createElement("button"); dl.type = "button";
+      dl.textContent = "download"; dl.setAttribute("aria-label", "Download " + name);
+      dl.addEventListener("click", function () { download(opts.downloadName, value); });
+      acts.appendChild(dl);
+    }
+    head.appendChild(nm); head.appendChild(acts);
+    var body = document.createElement(opts.pre ? "pre" : "div");
+    if (!opts.pre) body.className = "val";
+    body.textContent = value;
+    art.appendChild(head); art.appendChild(body);
+    return art;
+  }
+
+  function logRows(result) {
+    var rows = [];
+    (result.events || []).forEach(function (e) {
+      var cls = (e.status === "ok" || e.status === "grounded") ? "ok"
+        : (e.status === "abstain" || e.status === "degraded") ? "wait" : "reject";
+      var detail = (e.detail || "");
+      if (detail.length > 150) detail = detail.slice(0, 150) + "...";
+      rows.push({ cls: cls, tick: e.status, k: e.kind, d: e.label,
+                  t: (e.grounding && e.grounding.elapsed_ms !== undefined) ? e.grounding.elapsed_ms + "ms"
+                     : (e.row_count !== undefined ? e.row_count + " rows" : ""),
+                  sub: detail });
+    });
+    return rows;
+  }
+
+  function renderLog(result) {
+    var log = $("log"); log.innerHTML = "";
+    var rows = logRows(result);
+    var guards = result.guardrails || [];
+    $("logMeta").textContent = rows.length + " events · " + guards.length + " guardrail checks";
+    var per = reduce() ? 0 : 200, i = 0;
+    function emitGuards() {
+      if (!guards.length) return;
+      var h = document.createElement("div"); h.className = "subhead";
+      h.textContent = "guardrail audit trail (from the run's state store)";
+      log.appendChild(h);
+      guards.forEach(function (g) {
+        var row = document.createElement("div");
+        row.className = "logrow " + (g.outcome === "pass" ? "ok" : "reject");
+        row.innerHTML = '<span class="tick"></span><span class="txt"><span class="k"></span><span class="d"></span></span><span class="t"></span>';
+        row.querySelector(".tick").textContent = g.outcome;
+        row.querySelector(".k").textContent = g.name;
+        row.querySelector(".d").textContent = g.detail || "";
+        log.appendChild(row);
+      });
+    }
+    function emit() {
+      if (i >= rows.length) { emitGuards(); return; }
+      var st = rows[i];
+      var row = document.createElement("div");
+      row.className = "logrow " + st.cls;
+      row.innerHTML = '<span class="tick"></span><span class="txt"><span class="k"></span><span class="d"></span></span><span class="t"></span>';
+      row.querySelector(".tick").textContent = st.tick;
+      row.querySelector(".k").textContent = st.k;
+      row.querySelector(".d").textContent = st.d;
+      row.querySelector(".t").textContent = st.t;
+      log.appendChild(row);
+      i++;
+      if (per) later(emit, per); else emit();
+    }
+    emit();
+  }
+
+  function renderRun(result) {
+    var run = $("run"); run.className = "run show"; run.innerHTML = "";
+    function step(lbl, delay) {
+      var d = document.createElement("div"); d.className = "step"; d.style.animationDelay = delay + "s";
+      var head = document.createElement("div"); head.className = "lbl"; head.textContent = lbl;
+      d.appendChild(head); run.appendChild(d); return d;
+    }
+    var traces = (result.traces || []).filter(Boolean);
+    var s1 = step("1 · question → named query template", 0);
+    var p = document.createElement("p");
+    p.style.cssText = "margin:6px 0 0;color:var(--muted);font-size:14px";
+    p.textContent = result.query_name
+      ? "template " + result.query_name + "  ·  transport " + result.transport
+      : "no template matched this question; the agent abstains rather than guessing";
+    s1.appendChild(p);
+
+    traces.forEach(function (t, idx) {
+      var s = step((idx + 2) + " · clickhouse sql", 0.15 * (idx + 1));
+      var pre = document.createElement("pre"); pre.className = "sql"; pre.textContent = t.sql || "";
+      s.appendChild(pre);
+      var tr = document.createElement("div"); tr.className = "trace";
+      tr.innerHTML = "source <b></b> · rows read <b></b> · bytes <b></b> · <b></b>";
+      var bs = tr.querySelectorAll("b");
+      bs[0].textContent = t.source;
+      bs[1].textContent = (t.rows_read === null || t.rows_read === undefined) ? "n/a" : t.rows_read;
+      bs[2].textContent = (t.bytes_read === null || t.bytes_read === undefined) ? "n/a" : t.bytes_read;
+      bs[3].textContent = t.elapsed_ms + "ms";
+      s.appendChild(tr);
+    });
+
+    var last = step((traces.length + 2) + " · " + (result.abstained ? "abstain" : "grounded answer"), 0.15 * (traces.length + 1));
+    var box = document.createElement("div");
+    box.className = "answer" + (result.abstained ? " abstain" : "");
+    var tag = document.createElement("span"); tag.className = "atag";
+    tag.textContent = result.abstained
+      ? "abstained · " + (result.error ? "execution error" : "no rows support an answer")
+      : "answer · grounded in " + (result.rows ? result.rows.length : 0) + " retrieved rows";
+    var body = document.createElement("p"); body.textContent = result.answer;
+    box.appendChild(tag); box.appendChild(body);
+    last.appendChild(box);
+  }
+
+  function renderArtifacts(result) {
+    var arts = $("arts"); arts.innerHTML = "";
+    arts.appendChild(makeArtifact(result.abstained ? "Abstain" : "Grounded answer", result.answer,
+      { downloadName: "boxoffice-answer.txt", abstain: result.abstained }));
+    var traces = (result.traces || []).filter(Boolean);
+    var sql = traces.map(function (t, i) { return "-- " + (t.note || ("query " + (i + 1))) + "\n" + t.sql; }).join("\n\n");
+    arts.appendChild(makeArtifact("Exact ClickHouse SQL", sql || "(no query was run)",
+      { pre: true, downloadName: "boxoffice-query.sql" }));
+    arts.appendChild(makeArtifact("Grounding trace", traceText(traces, result),
+      { pre: true, downloadName: "boxoffice-grounding-trace.txt" }));
+  }
+
+  function renderGuardrail(entry, name) {
+    var run = $("run"); run.className = "run show"; run.innerHTML = "";
+    var d = document.createElement("div"); d.className = "step";
+    var head = document.createElement("div"); head.className = "lbl";
+    head.textContent = "guardrail · " + name;
+    var pre = document.createElement("pre"); pre.className = "sql"; pre.textContent = entry.sql;
+    var box = document.createElement("div"); box.className = "answer abstain";
+    var tag = document.createElement("span"); tag.className = "atag";
+    tag.textContent = entry.result.status + " · " + (entry.result.grounding.guardrail || "");
+    var body = document.createElement("p"); body.textContent = entry.result.reason;
+    box.appendChild(tag); box.appendChild(body);
+    d.appendChild(head); d.appendChild(pre); d.appendChild(box);
+    run.appendChild(d);
+  }
+
+  function render(result) {
+    renderRun(result);
+    renderLog(result);
+    later(function () { renderArtifacts(result); }, reduce() ? 0 : 700);
+  }
+
+  // --- guardrail scenario ----------------------------------------------------
+  function showGuardrail() {
+    var g = TRANSCRIPT && TRANSCRIPT.guardrail;
+    if (!g) {
+      $("run").className = "run show";
+      $("run").innerHTML = '<div class="step"><div class="lbl">guardrail</div><p style="color:var(--muted)">No recorded guardrail transcript is embedded. Run <code>python scripts/record_transcript.py</code>.</p></div>';
+      return;
+    }
+    var run = $("run"); run.className = "run show"; run.innerHTML = "";
+    var log = $("log"); log.innerHTML = ""; $("logMeta").textContent = Object.keys(g).length + " refusals";
+    Object.keys(g).forEach(function (name) {
+      var entry = g[name];
+      var d = document.createElement("div"); d.className = "step";
+      var head = document.createElement("div"); head.className = "lbl"; head.textContent = "refused · " + name;
+      var pre = document.createElement("pre"); pre.className = "sql"; pre.textContent = entry.sql;
+      var box = document.createElement("div"); box.className = "answer abstain";
+      var tag = document.createElement("span"); tag.className = "atag";
+      tag.textContent = entry.result.status + " · " + (entry.result.grounding.guardrail || "");
+      var body = document.createElement("p"); body.textContent = entry.result.reason;
+      box.appendChild(tag); box.appendChild(body);
+      d.appendChild(head); d.appendChild(pre); d.appendChild(box);
+      run.appendChild(d);
+
+      var row = document.createElement("div"); row.className = "logrow reject";
+      row.innerHTML = '<span class="tick"></span><span class="txt"><span class="k"></span><span class="d"></span></span><span class="t"></span>';
+      row.querySelector(".tick").textContent = entry.result.status;
+      row.querySelector(".k").textContent = entry.result.grounding.guardrail || "guardrail";
+      row.querySelector(".d").textContent = entry.result.reason;
+      log.appendChild(row);
+    });
+    $("arts").innerHTML = "";
+    $("arts").appendChild(makeArtifact("Refused queries", Object.keys(g).map(function (n) {
+      return "-- " + n + "\n" + g[n].sql + "\n-> " + g[n].result.status + ": " + g[n].result.reason;
+    }).join("\n\n"), { pre: true, downloadName: "boxoffice-guardrail.txt" }));
+  }
+
+  // --- orchestration ---------------------------------------------------------
+  var lastKey = null;
+  function busy(on) {
+    $("askBtn").disabled = on; $("replayBtn").disabled = on;
+    $("askBtn").textContent = on ? "running..." : "Ask";
+  }
+
+  function runScenario(key) {
+    clearTimers();
+    lastKey = key;
+    if (key === "guardrail") { showGuardrail(); return; }
+    if (MODE.live) {
+      busy(true);
+      fetch("api/ask", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: questionFor(key) })
+      }).then(function (r) { return r.json(); })
+        .then(function (result) { busy(false); render(result); })
+        .catch(function (e) {
+          busy(false);
+          $("run").className = "run show";
+          $("run").innerHTML = '<div class="step"><div class="lbl">backend error</div><p style="color:var(--red)">' + e + '</p></div>';
+        });
+      return;
+    }
+    if (!TRANSCRIPT || !TRANSCRIPT.scenarios[key]) {
+      $("run").className = "run show";
+      $("run").innerHTML = '<div class="step"><div class="lbl">no data</div><p style="color:var(--muted)">No recorded transcript for this question. Run <code>boxoffice serve</code> or <code>python scripts/record_transcript.py</code>.</p></div>';
+      return;
+    }
+    render(TRANSCRIPT.scenarios[key].result);
+  }
+
+  function resetAll() {
+    clearTimers();
+    $("run").className = "run"; $("run").innerHTML = "";
+    $("log").innerHTML = '<div class="empty">Press Ask to trace the run.</div>';
+    $("logMeta").textContent = "";
+    $("arts").innerHTML = '<div class="empty">The answer, the exact SQL, and the grounding trace appear here after a run.</div>';
+    lastKey = null;
+    $("q").focus();
+  }
+
+  fillSelect();
+  setMode(false, null);
+  probe();
+  $("askBtn").addEventListener("click", function () { runScenario($("q").value); });
+  $("replayBtn").addEventListener("click", function () { runScenario(lastKey || $("q").value); });
+  $("resetBtn").addEventListener("click", resetAll);
+  var helpBtn = $("helpBtn"), legend = $("legend");
+  helpBtn.addEventListener("click", function () {
+    var open = legend.classList.toggle("show");
+    helpBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+})();
+</script>
