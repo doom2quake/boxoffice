@@ -1,0 +1,203 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=0.85in]{geometry}
+\usepackage{times}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,frame=single,
+  rulecolor=\color{gray!40},backgroundcolor=\color{gray!5}}
+\hypersetup{colorlinks=true,linkcolor=teal,urlcolor=teal}
+\setlength{\parskip}{4pt}\setlength{\parindent}{0pt}
+
+\title{\vspace{-2em}\textbf{BoxOffice Brain}\\[2pt]
+\large A grounded cinema-analytics agent on ClickHouse}
+\author{Dipankar Sarkar\\ \small \texttt{github.com/doom2quake}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+An analytics team asks a question in plain English and wants a number it can act
+on, not a plausible guess. BoxOffice Brain answers by writing read-only
+ClickHouse SQL and running it through ClickHouse's own Model Context Protocol
+server at request time. Every result carries a grounding trace (the exact SQL,
+rows and bytes scanned, latency), every quantitative claim traces to a retrieved
+row, and the agent abstains with a stated data gap when the rows cannot support
+the question. A failed query is reported as a failure rather than as an empty
+result. Two properties are measured rather than asserted: the same statement
+executed on three transports (the official MCP server, ClickHouse HTTP, and an
+embedded engine over a committed extract of the same tables) returns identical
+values to within $10^{-9}$, and a data-scope guardrail refuses ClickHouse table
+functions that a read-only screen alone would let through.
+\end{abstract}
+
+\section{Problem}
+Text-to-analytics agents are easy to make impressive and hard to make
+trustworthy. The failure mode that matters is not a wrong join, it is a
+confident answer that no row supports. A reader cannot tell a grounded
+``\emph{War} fell 0.78 rating points'' from a hallucinated one, and a summary
+over a stale extract is already wrong the moment the warehouse moves.
+
+A second failure mode is subtler and appears once an agent writes its own SQL.
+A read-only screen accepts \texttt{SELECT * FROM url('http://\ldots')}, which is
+a single \texttt{SELECT} statement that reads the open internet, and
+\texttt{SELECT * FROM file('/etc/passwd')}, which reads the local disk. A
+prompt-injected question is exactly how such a statement gets written. Read-only
+is a necessary check and not a sufficient one.
+
+We therefore want three properties: every quoted number traces to a row that
+came back at request time; the agent refuses, and says what it would need, when
+the rows do not support an answer; and the set of data the generated SQL can
+reach is bounded by an explicit allowlist rather than by the service account's
+incidental privileges.
+
+\section{Design}
+BoxOffice Brain is a Gemini/ADK supervisor over three named skills assembled on
+\emph{agent-core}, a reusable ADK core. The supervisor delegates in order:
+\begin{itemize}
+\item \textbf{Planner} calls \texttt{describe\_tables} to read the schema it is
+permitted to see, then states the metric, the comparison, the dimensions, and
+the second signal to check. No SQL yet.
+\item \textbf{Analyst} writes read-only ClickHouse SQL and runs it via
+\texttt{run\_clickhouse\_sql}, returning rows plus a grounding trace per query.
+\item \textbf{Answer Writer} synthesises a decision-ready answer from the
+retrieved rows only, or abstains.
+\end{itemize}
+
+\subsection{The MCP hop is load-bearing}
+With \texttt{BOX\_TRANSPORT=mcp}, \texttt{run\_clickhouse\_sql} executes by
+launching \texttt{mcp-clickhouse}, the MCP server ClickHouse publishes, over
+stdio and calling its \texttt{run\_query} tool. The guardrails sit in front of
+that hop and the official server does the work behind it. If the server cannot
+start, the transport returns \texttt{status: error}; it does not fall back to
+in-process tools while still reporting success. One session is held open on a
+background event loop, because launching the server per query costs seconds and
+would misrepresent ClickHouse's latency.
+
+The endpoint defaults to the public ClickHouse SQL playground with the read-only
+\texttt{demo} user, the same endpoint the official server defaults to, so the
+integration is reproducible without a funded key. The corpus is IMDb catalogue
+data: 388{,}269 films and 3.4M roles.
+
+\section{Grounding, abstain, and failure}
+The hero mechanism is the contract on the query tool. Every call returns a
+\texttt{status} and a structured \texttt{grounding} block:
+\begin{lstlisting}
+{"status": "ok", "rows": [...],
+ "grounding": {"sql": "...", "note": "...",
+   "rows_read": N, "bytes_read": B,
+   "elapsed_ms": T, "source": "clickhouse_mcp",
+   "transport": "mcp"}}
+\end{lstlisting}
+\texttt{status == "ok"} is the only value from which rows may be read. This
+distinction is load-bearing: an earlier build treated any result as a row list,
+so a simulated ClickHouse timeout was reported as the finding ``no titles
+matched''. An operational failure now surfaces as an execution error, and the
+answer says so.
+
+Three outcomes are therefore distinguishable: a grounded answer, an abstention
+because the query ran and returned nothing that answers the question, and an
+execution error. A fourth case is refused before any query runs: a question that
+maps to no named analytical template, which the agent answers by listing what it
+can ground.
+
+\section{Guardrails}
+Four gates run before a byte leaves the process, and each decision is appended to
+the run's audit trail in the state store, so the interface displays the recorded
+outcome rather than a decorative tick.
+
+\begin{enumerate}
+\item \textbf{READ\_ONLY\_SQL}: a single \texttt{SELECT}/\texttt{WITH}, no writes
+or DDL.
+\item \textbf{QUERY\_SCOPE}: comments are stripped, string literals masked, and
+the statement refused if it calls a ClickHouse table function (\texttt{url},
+\texttt{file}, \texttt{s3}, \texttt{remote}, \texttt{mysql}, and 25 others),
+carries a \texttt{SETTINGS} clause or \texttt{INTO OUTFILE}, or reads any table
+outside an explicit allowlist. Common table expressions are resolved rather than
+allowlisted, and an identifier the scanner cannot resolve is refused.
+\item \textbf{ACTION\_LIMITER}: per-run and per-hour caps, keyed off a
+\texttt{ContextVar} so concurrent runs cannot spend each other's budget.
+\item \textbf{Server-side bounds}: \texttt{readonly=1},
+\texttt{max\_result\_rows}, \texttt{max\_result\_bytes} and
+\texttt{max\_execution\_time}, plus a bounded client read, so an unbounded
+generated query is stopped by ClickHouse rather than by the client exhausting
+memory after downloading the whole result.
+\end{enumerate}
+
+\section{Results}
+\subsection{Cross-engine parity}
+The offline transport is an embedded SQLite engine over a 11{,}239-row extract of
+the same \texttt{imdb.movies} and \texttt{imdb.genres} tables, attached under the
+schema name \texttt{imdb} so the identical statement text runs on both. The
+analytical templates are written in the intersection of ClickHouse SQL and
+SQLite SQL (\texttt{CASE WHEN} rather than \texttt{countIf}), which makes a real
+comparison possible.
+
+Running the hero query (mean rating per genre, 1999 against 1998, genres with at
+least 20 rated titles in each year) on all three transports and comparing every
+returned cell:
+
+\begin{center}
+\begin{tabular}{lrrr}
+\hline
+transport & rows & engine ms & rows read \\
+\hline
+offline & 18 & 17.7 & 11{,}239 \\
+http & 18 & 387.1 & 783{,}388 \\
+mcp & 18 & 1{,}032.3 & n/a \\
+\hline
+\end{tabular}
+\end{center}
+
+All three agreed on all 18 rows and every numeric cell to within $10^{-9}$.
+Reaching that tolerance required one deliberate fix: ClickHouse stores
+\texttt{rank} as \texttt{Float32} and promotes it to \texttt{Float64} when
+averaging, so the loader round-trips each value through a 32-bit float. Without
+it the engines diverge in the seventh significant digit.
+
+The latencies are not a benchmark and should not be read as one. The offline
+engine reads 11{,}239 rows because that is the whole extract; the warehouse reads
+783{,}388 for the same answer. The MCP figure is the tool call on a warm
+session, and the official server's \texttt{run\_query} returns columns and rows
+only, so scan statistics are unavailable on that path and are displayed as
+\texttt{n/a} rather than estimated.
+
+\subsection{Tests}
+35 keyless tests and 4 opt-in live tests. The keyless set pins the read-only
+screen, the data-scope allowlist against five table-function payloads and a
+cross-database read, a comment-hidden payload, per-context run isolation, the
+offline engine evaluating predicates (\texttt{WHERE 1=0} returns zero rows) and
+reporting invalid SQL as an error, question routing to distinct templates,
+abstention on both empty rows and unsupported questions, a failed query not being
+read as absent data, the correlated signal being scoped to the cohort the
+headline named, run finalisation with a persisted guardrail trail, and
+fail-closed MCP behaviour. The live set starts ClickHouse's own MCP server,
+checks its advertised tool names, and compares live rows against the offline
+snapshot.
+
+\section{Limitations}
+Gemini and ADK are wired and importable, and the CLI calls the agent graph when
+Google Cloud credentials are present, but this build has no funded Vertex AI
+project attached. Every number reported here comes from the keyless grounded
+router, which maps a question to one of four named templates and abstains
+otherwise. That is a deliberate downgrade for reproducibility, not natural
+language understanding, and we make no claim about model behaviour under this
+prompt set.
+
+The guardrails are regex-level checks over comment-stripped SQL, not a parser; an
+exotic ClickHouse construct could in principle be shaped past them, which is why
+server-side bounds and a read-only account also apply. The abstain rule bounds
+hallucination at the retrieved-rows boundary but does not verify that the SQL
+answers the question asked. The offline extract covers 1998 and 1999 only. There
+is no holdout evaluation over a question distribution; cross-engine parity is a
+correctness check on one query, not a measure of answer quality.
+
+\section{Conclusion}
+An analytics agent can put its evidence on the table, refuse when the table is
+empty, say so when the query failed, and be prevented from reading data it was
+never meant to see. BoxOffice Brain quotes a number only when a ClickHouse row
+supports it, shows the SQL and the scan behind every answer, and can be checked
+against the live warehouse by anyone, without a key.
+
+\end{document}
