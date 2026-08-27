@@ -1,0 +1,14 @@
+launching official ClickHouse MCP server: uvx --python 3.11 mcp-clickhouse
+endpoint: https://sql-clickhouse.clickhouse.com:8443/ (user=demo)
+server up in 7.6s
+tools advertised: ['list_databases', 'list_tables', 'run_query']
+
+tool call: run_query
+sql: SELECT g.genre AS genre, count(*) AS titles, avg(m.rank) AS rating FROM imdb.genres AS g INNER JOIN imdb.movies AS m ON m.id = g.movie_id WHERE m.year = 1999 AND m.rank > 0 GROUP BY g.genre ORDER BY titles DESC LIMIT 5
+latency: 1030.7 ms
+rows: 5
+  {"genre": "Drama", "titles": 809, "rating": 6.1368356025115816}
+  {"genre": "Comedy", "titles": 673, "rating": 5.70326894264873}
+  {"genre": "Short", "titles": 441, "rating": 6.185034024201824}
+  {"genre": "Thriller", "titles": 239, "rating": 5.441004189487281}
+  {"genre": "Romance", "titles": 223, "rating": 5.890134522733132}
