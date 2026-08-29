@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "BoxOffice Brain: a grounded cinema-analytics agent on ClickHouse"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: "Sarkar"
+    given-names: "Dipankar"
+repository-code: "https://github.com/doom2quake/boxoffice"
+abstract: >-
+  A cinema-catalogue analytics agent on Gemini and ADK that answers plain English
+  questions by writing read-only ClickHouse SQL and running it through the official
+  ClickHouse MCP server at request time. Every result carries a grounding trace
+  (the exact SQL, rows and bytes scanned, latency), every claim traces to a
+  retrieved row, a failed query is reported as a failure rather than as an empty
+  result, and a data-scope allowlist bounds what the generated SQL can read.
+keywords:
+  - clickhouse
+  - agentic-analytics
+  - grounding
+  - retrieval-grounded
+  - gemini-adk
+  - mcp
+license: MIT
+version: "0.1.0"
+date-released: "2026-08-19"
