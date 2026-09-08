@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "A cinema-catalogue analytics agent on Gemini/ADK that runs read-only ClickHouse SQL through the official ClickHouse MCP server, grounds every claim in retrieved rows, and abstains when the data cannot support an answer."
 requires-python = ">=3.10"
 dependencies = [
-    "agent-core",        # local: pip install -e ../../packages/agent-core
+    # agent_core is vendored in-tree (./agent_core) so a fresh clone runs with no
+    # monorepo checkout. Gemini/ADK and the ClickHouse MCP client are optional extras.
 ]
 
 [project.optional-dependencies]
@@ -24,4 +25,4 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["boxoffice*"]
+include = ["boxoffice*", "agent_core*"]
