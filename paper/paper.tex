@@ -19,9 +19,9 @@
 
 \begin{abstract}
 An analytics team asks a question in plain English and wants a number it can act
-on, not a plausible guess. BoxOffice Brain answers by writing read-only
-ClickHouse SQL and running it through ClickHouse's own Model Context Protocol
-server at request time. Every result carries a grounding trace (the exact SQL,
+on, not a plausible guess. BoxOffice Brain answers with a Gemini/ADK agent on
+Vertex AI that writes read-only ClickHouse SQL and runs it through ClickHouse's
+own Model Context Protocol server at request time. Every result carries a grounding trace (the exact SQL,
 rows and bytes scanned, latency), every quantitative claim traces to a retrieved
 row, and the agent abstains with a stated data gap when the rows cannot support
 the question. A failed query is reported as a failure rather than as an empty
@@ -54,7 +54,8 @@ incidental privileges.
 
 \section{Design}
 BoxOffice Brain is a Gemini/ADK supervisor over three named skills assembled on
-\emph{agent-core}, a reusable ADK core. The supervisor delegates in order:
+\emph{agent-core}, a reusable ADK core. At request time the supervisor runs
+Gemini (\texttt{gemini-2.5-flash}) on Vertex AI and delegates in order:
 \begin{itemize}
 \item \textbf{Planner} calls \texttt{describe\_tables} to read the schema it is
 permitted to see, then states the metric, the comparison, the dimensions, and
@@ -64,6 +65,14 @@ the second signal to check. No SQL yet.
 \item \textbf{Answer Writer} synthesises a decision-ready answer from the
 retrieved rows only, or abstains.
 \end{itemize}
+With \texttt{GOOGLE\_GENAI\_USE\_VERTEXAI=True} and a Google Cloud project,
+Gemini itself writes the SQL and issues the MCP \texttt{run\_query} call; a
+captured end-to-end Vertex run is in \texttt{docs/gemini-run.txt}, showing the
+planner output, the SQL Gemini wrote, the rows the MCP server returned, and the
+\emph{agent-core} action limiter capping further queries. The keyless
+\texttt{-{}-no-llm} router below is the reproducible, no-credential path used by
+the tests and figures; both paths execute the same read-only SQL against the
+same ClickHouse, and neither quotes a number that did not come back in a row.
 
 \subsection{The MCP hop is load-bearing}
 With \texttt{BOX\_TRANSPORT=mcp}, \texttt{run\_clickhouse\_sql} executes by
@@ -177,21 +186,26 @@ checks its advertised tool names, and compares live rows against the offline
 snapshot.
 
 \section{Limitations}
-Gemini and ADK are wired and importable, and the CLI calls the agent graph when
-Google Cloud credentials are present, but this build has no funded Vertex AI
-project attached. Every number reported here comes from the keyless grounded
-router, which maps a question to one of four named templates and abstains
-otherwise. That is a deliberate downgrade for reproducibility, not natural
-language understanding, and we make no claim about model behaviour under this
+Gemini and ADK run at request time on Vertex AI: with a Google Cloud project the
+supervisor drives Gemini, which writes the SQL and calls the MCP \texttt{run\_query}
+tool (\texttt{docs/gemini-run.txt}). The parity and latency figures in this paper,
+and the tests, come instead from the keyless grounded router, which maps a
+question to one of four named templates and abstains otherwise. That router is a
+deliberate downgrade for reproducibility, not natural language understanding, so
+anyone can reproduce the numbers without a key; it is the source of the
+reported cells, and we make no quantitative claim about model behaviour over a
 prompt set.
 
-The guardrails are regex-level checks over comment-stripped SQL, not a parser; an
-exotic ClickHouse construct could in principle be shaped past them, which is why
-server-side bounds and a read-only account also apply. The abstain rule bounds
-hallucination at the retrieved-rows boundary but does not verify that the SQL
-answers the question asked. The offline extract covers 1998 and 1999 only. There
-is no holdout evaluation over a question distribution; cross-engine parity is a
-correctness check on one query, not a measure of answer quality.
+The live endpoint is the public ClickHouse SQL playground with the read-only
+\texttt{demo} user, not a private ClickHouse Cloud service, and the corpus is
+IMDb catalogue data; the credentialled path to a paid cluster is therefore
+untested. The guardrails are regex-level checks over comment-stripped SQL, not a
+parser; an exotic ClickHouse construct could in principle be shaped past them,
+which is why server-side bounds and a read-only account also apply. The abstain
+rule bounds hallucination at the retrieved-rows boundary but does not verify that
+the SQL answers the question asked. The offline extract covers 1998 and 1999
+only. There is no holdout evaluation over a question distribution; cross-engine
+parity is a correctness check on one query, not a measure of answer quality.
 
 \section{Conclusion}
 An analytics agent can put its evidence on the table, refuse when the table is

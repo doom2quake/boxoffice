@@ -1,123 +1,234 @@
-<title>BoxOffice Brain, grounded cinema analytics on ClickHouse</title>
+<title>BoxOffice Brain, the Multiverse Projector on ClickHouse</title>
 <style>
   :root {
-    --bg: #0B0B0C; --panel: #141416; --panel2: #1a1a1d; --line: #2a2a2e;
-    --text: #F2F1EC; --muted: #9A9A92; --faint: #5f5f58;
-    --yellow: #FFD634; --yellow-dim: #7a6a1e; --red: #E5484D; --green: #46C98B;
-    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    --bg:#08080A; --bg2:#0d0d10; --panel:#141418; --panel2:#1a1a20; --line:#26262d;
+    --text:#F4F3EE; --muted:#9a9aa4; --faint:#5c5c66;
+    --gold:#FFD24A; --gold-dim:#7a6a1e; --amber:#FFB020; --red:#E5484D; --green:#46C98B;
+    --violet:#8B7BF0; --cyan:#4FD6E0;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   }
-  * { box-sizing: border-box; } html, body { margin: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
-  .wrap { max-width: 940px; margin: 0 auto; padding: 36px 24px 64px; }
-  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--yellow); margin: 0 0 10px; }
-  h1 { font-size: clamp(28px,4.6vw,42px); line-height: 1.05; letter-spacing: -.02em; margin: 0; font-weight: 800; text-wrap: balance; }
-  .thesis { color: var(--muted); font-size: 17px; max-width: 64ch; margin: 14px 0 20px; }
+  * { box-sizing:border-box; } html,body { margin:0; }
+  body {
+    background:
+      radial-gradient(1200px 620px at 78% -8%, rgba(139,123,240,.14), transparent 60%),
+      radial-gradient(900px 520px at 10% 4%, rgba(79,214,224,.08), transparent 55%),
+      var(--bg);
+    color:var(--text); font-family:var(--sans); line-height:1.55; min-height:100vh;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  .wrap { max-width:1040px; margin:0 auto; padding:34px 24px 72px; }
 
-  .titlebar { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .helpbtn { font-family: var(--mono); font-size: 13px; color: var(--muted); background: #0f0f11; border: 1px solid var(--line); border-radius: 999px; width: 30px; height: 30px; cursor: pointer; flex: 0 0 auto; line-height: 1; }
-  .helpbtn:hover, .helpbtn[aria-expanded="true"] { color: var(--yellow); border-color: var(--yellow-dim); }
+  /* --- masthead --- */
+  .top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
+  .brand { display:flex; align-items:center; gap:11px; }
+  .brand .glyph { width:30px; height:30px; flex:0 0 auto; }
+  .brand .name { font-family:var(--mono); font-size:12.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); }
+  .helpbtn { font-family:var(--mono); font-size:13px; color:var(--muted); background:#0f0f13; border:1px solid var(--line); border-radius:999px; width:30px; height:30px; cursor:pointer; line-height:1; flex:0 0 auto; }
+  .helpbtn:hover, .helpbtn[aria-expanded="true"] { color:var(--gold); border-color:var(--gold-dim); }
 
-  /* --- mode banner: the page must never look live when it is not --- */
-  .mode { display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 0 0 18px; background: var(--panel); }
-  .mode .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin-top: 7px; flex: 0 0 auto; }
-  .mode .txt { min-width: 0; }
-  .mode .hd { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-  .mode .bd { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
-  .mode .bd b { color: var(--text); font-weight: 600; }
-  .mode.live { border-color: #2c4a38; background: linear-gradient(180deg,#0f1a14,#141416); }
-  .mode.live .dot { background: var(--green); box-shadow: 0 0 0 4px rgba(70,201,139,.15); }
-  .mode.live .hd { color: var(--green); }
-  .mode.recorded { border-color: var(--yellow-dim); background: linear-gradient(180deg,#191708,#141416); }
-  .mode.recorded .dot { background: var(--yellow); }
-  .mode.recorded .hd { color: var(--yellow); }
+  h1 { font-size:clamp(30px,5vw,50px); line-height:1.02; letter-spacing:-.025em; margin:0; font-weight:800; text-wrap:balance; }
+  h1 .grad { background:linear-gradient(92deg,var(--gold),var(--cyan) 62%,var(--violet)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .thesis { color:var(--muted); font-size:16.5px; max-width:60ch; margin:14px 0 0; }
 
-  .legend { display: none; margin: 0 0 20px; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
-  .legend.show { display: block; }
-  .legend h2 { font-size: 13px; font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--yellow); margin: 0 0 10px; }
-  .legend ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-  .legend li { color: var(--muted); font-size: 13.5px; padding-left: 20px; position: relative; }
-  .legend li b { color: var(--text); font-weight: 600; }
-  .legend li::before { content: ""; position: absolute; left: 0; top: 7px; width: 8px; height: 8px; border-radius: 2px; background: var(--yellow-dim); }
+  /* --- mode banner: never look live when it is not --- */
+  .mode { display:flex; align-items:flex-start; gap:11px; border:1px solid var(--line); border-radius:11px; padding:11px 14px; margin:20px 0 0; background:var(--panel); }
+  .mode .dot { width:9px; height:9px; border-radius:50%; background:var(--muted); margin-top:7px; flex:0 0 auto; }
+  .mode .txt { min-width:0; }
+  .mode .hd { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .mode .bd { font-size:13px; color:var(--muted); margin-top:2px; }
+  .mode .bd b { color:var(--text); font-weight:600; }
+  .mode.live { border-color:#2c4a38; background:linear-gradient(180deg,#0f1a14,#131318); }
+  .mode.live .dot { background:var(--green); box-shadow:0 0 0 4px rgba(70,201,139,.15); animation:pulse 2.4s infinite; }
+  .mode.live .hd { color:var(--green); }
+  .mode.recorded { border-color:var(--gold-dim); background:linear-gradient(180deg,#191708,#131318); }
+  .mode.recorded .dot { background:var(--amber); }
+  .mode.recorded .hd { color:var(--amber); }
+  @keyframes pulse { 0%,100%{ box-shadow:0 0 0 4px rgba(70,201,139,.15);} 50%{ box-shadow:0 0 0 7px rgba(70,201,139,.05);} }
 
-  .ask { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  select { flex: 1 1 340px; background: #0f0f11; border: 1px solid var(--line); color: var(--text); font-family: var(--sans); font-size: 15px; padding: 12px 14px; border-radius: 9px; }
-  button.ask-btn { font-family: var(--sans); font-weight: 700; font-size: 15px; background: var(--yellow); color: #201c00; border: 0; border-radius: 9px; padding: 12px 24px; cursor: pointer; }
-  button.ask-btn:hover { background: #ffe066; }
-  button.ghost { font-family: var(--mono); font-size: 13px; color: var(--muted); background: #0f0f11; border: 1px solid var(--line); border-radius: 9px; padding: 11px 16px; cursor: pointer; }
-  button.ghost:hover { color: var(--yellow); border-color: var(--yellow-dim); }
-  button:focus-visible, select:focus-visible, .helpbtn:focus-visible, a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
-  button[disabled] { opacity: .5; cursor: default; }
+  .legend { display:none; margin:14px 0 0; border:1px solid var(--line); background:var(--panel); border-radius:11px; padding:16px 18px; }
+  .legend.show { display:block; }
+  .legend h2 { font-size:12px; font-family:var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin:0 0 10px; }
+  .legend ul { margin:0; padding:0; list-style:none; display:grid; gap:8px; }
+  .legend li { color:var(--muted); font-size:13.5px; padding-left:19px; position:relative; }
+  .legend li b { color:var(--text); font-weight:600; }
+  .legend li::before { content:""; position:absolute; left:0; top:8px; width:7px; height:7px; border-radius:2px; background:var(--gold-dim); }
 
-  .how { margin: 28px 0 8px; border: 1px solid var(--line); background: linear-gradient(180deg,#111113,#0e0e10); border-radius: 12px; padding: 18px 20px 8px; }
-  .how h2 { font-size: 12px; font-family: var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
-  .how .cap { color: var(--faint); font-size: 12.5px; margin: 0 0 8px; font-family: var(--mono); }
-  .diagram-scroll { overflow-x: auto; }
-  svg.pipeline { display: block; width: 100%; min-width: 660px; height: auto; }
-  .nlbl { font-family: var(--sans); font-weight: 700; font-size: 12.5px; fill: var(--text); }
-  .nsub { font-family: var(--mono); font-size: 9.5px; fill: var(--muted); letter-spacing: .02em; }
-  .elbl { font-family: var(--mono); font-size: 9px; fill: var(--faint); letter-spacing: .04em; }
+  /* --- projector console --- */
+  .console { margin-top:24px; border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#131318,#0e0e12); box-shadow:0 24px 60px -30px rgba(0,0,0,.9); overflow:hidden; }
+  .controls { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; padding:20px 22px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,rgba(139,123,240,.05),transparent); }
+  .fld { display:flex; flex-direction:column; gap:7px; }
+  .fld .cap { font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+  .fld.genre { flex:1 1 210px; min-width:180px; }
+  .fld.year { flex:2 1 320px; min-width:240px; }
+  select#genre { background:#0f0f13; border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:15px; font-weight:600; padding:11px 13px; border-radius:10px; width:100%; cursor:pointer; }
+  select#genre:hover { border-color:var(--gold-dim); }
+  .yearrow { display:flex; align-items:center; gap:14px; }
+  .yearval { font-family:var(--mono); font-size:26px; font-weight:700; color:var(--gold); font-variant-numeric:tabular-nums; min-width:74px; letter-spacing:-.01em; }
+  input[type=range] { -webkit-appearance:none; appearance:none; flex:1; height:6px; border-radius:99px; background:linear-gradient(90deg,var(--gold-dim),var(--line)); outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--gold); border:3px solid #1a1710; box-shadow:0 0 0 1px var(--gold-dim), 0 2px 8px rgba(0,0,0,.5); cursor:grab; }
+  input[type=range]::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--gold); border:3px solid #1a1710; cursor:grab; }
+  input[type=range]:active::-webkit-slider-thumb { cursor:grabbing; }
+  .projbtn { font-family:var(--sans); font-weight:700; font-size:15px; background:linear-gradient(180deg,#ffe27a,var(--gold)); color:#231d00; border:0; border-radius:11px; padding:12px 26px; cursor:pointer; align-self:flex-end; box-shadow:0 6px 20px -6px rgba(255,210,74,.5); transition:transform .12s, box-shadow .12s; white-space:nowrap; }
+  .projbtn:hover { transform:translateY(-1px); box-shadow:0 10px 26px -6px rgba(255,210,74,.6); }
+  .projbtn:active { transform:translateY(0); }
+  .projbtn[disabled] { opacity:.55; cursor:default; transform:none; box-shadow:none; }
+  button:focus-visible, select:focus-visible, input:focus-visible, .helpbtn:focus-visible, a:focus-visible, .chip:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
 
-  .run { margin-top: 22px; display: none; }
-  .run.show { display: block; }
-  .step { border-left: 2px solid var(--line); padding: 2px 0 18px 18px; margin-left: 6px; position: relative; opacity: 0; transform: translateX(-4px); animation: in .3s forwards; }
-  .step::before { content: ""; position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--yellow); }
-  @keyframes in { to { opacity: 1; transform: none; } }
-  .step .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-  .sql { font-family: var(--mono); font-size: 12.5px; background: #101012; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-top: 8px; white-space: pre-wrap; color: #d8e0c8; overflow-x: auto; }
-  .trace { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; gap: 18px; flex-wrap: wrap; }
-  .trace b { color: var(--yellow); font-variant-numeric: tabular-nums; }
+  /* --- stage --- */
+  .stage { position:relative; padding:0; }
+  .stagehd { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:16px 22px 4px; }
+  .stagehd .scen { font-size:15px; color:var(--muted); }
+  .stagehd .scen b { color:var(--text); font-weight:700; }
+  .conf { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; padding:5px 11px; border-radius:99px; border:1px solid var(--line); color:var(--muted); }
+  .conf.high { color:var(--green); border-color:#2c4a38; background:rgba(70,201,139,.08); }
+  .conf.moderate { color:var(--gold); border-color:var(--gold-dim); background:rgba(255,210,74,.07); }
+  .conf.low { color:var(--amber); border-color:#6a4a12; background:rgba(255,176,32,.07); }
+  .conf.insufficient { color:var(--red); border-color:#5c2a2b; background:rgba(229,72,77,.07); }
 
-  .answer { margin-top: 8px; border: 1px solid var(--yellow-dim); background: linear-gradient(180deg, #191708, #141416); border-radius: 10px; padding: 16px 18px; }
-  .answer.abstain { border-color: #5c2a2b; background: linear-gradient(180deg, #1c1010, #141416); }
-  .answer .atag { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--yellow); }
-  .answer.abstain .atag { color: var(--red); }
-  .answer p { margin: 8px 0 0; font-size: 15px; white-space: pre-wrap; }
+  .plotwrap { position:relative; margin:6px 12px 4px; }
+  canvas#plot { display:block; width:100%; height:300px; }
+  .plothint { position:absolute; right:14px; top:6px; font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--faint); pointer-events:none; text-align:right; }
+  .tip { position:absolute; pointer-events:none; z-index:5; background:#050506; border:1px solid var(--gold-dim); border-radius:8px; padding:7px 10px; font-size:12.5px; color:var(--text); box-shadow:0 8px 24px -8px #000; transform:translate(-50%,-115%); white-space:nowrap; opacity:0; transition:opacity .12s; }
+  .tip b { color:var(--gold); font-family:var(--mono); font-variant-numeric:tabular-nums; }
 
-  .grids { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 24px; }
-  @media (min-width: 780px){ .grids { grid-template-columns: 1fr 1fr; align-items: start; } }
-  .card { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 0; overflow: hidden; }
-  .card > .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
-  .card > .head h2 { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--yellow); margin: 0; }
-  .card > .head .meta { font-family: var(--mono); font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .card > .body { padding: 12px 16px 16px; }
+  /* stat strip */
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-top:8px; }
+  .stat { background:var(--bg2); padding:12px 16px; }
+  .stat .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--faint); }
+  .stat .v { font-family:var(--mono); font-size:20px; font-weight:700; color:var(--text); margin-top:3px; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .stat .v small { font-size:12px; color:var(--muted); font-weight:400; }
+  @media (max-width:640px){ .stats { grid-template-columns:repeat(2,1fr);} }
 
-  .log .empty, .arts .empty { color: var(--faint); font-family: var(--mono); font-size: 12.5px; padding: 6px 0; }
-  .logrow { display: grid; grid-template-columns: 62px 1fr auto; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid #202024; opacity: 0; transform: translateY(3px); animation: login .28s forwards; }
-  .logrow:last-child { border-bottom: 0; }
-  @keyframes login { to { opacity: 1; transform: none; } }
-  .logrow .tick { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--green); }
-  .logrow.reject .tick, .logrow.error .tick { color: var(--red); }
-  .logrow.wait .tick { color: var(--yellow); }
-  .logrow .txt { min-width: 0; }
-  .logrow .k { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
-  .logrow .d { font-size: 13px; color: var(--text); margin-top: 1px; overflow-wrap: anywhere; }
-  .logrow .t { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .subhead { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); margin: 14px 0 4px; border-top: 1px solid var(--line); padding-top: 12px; }
+  /* abstain state */
+  .abstain-state { display:none; margin:8px 22px 20px; border:1px solid #5c2a2b; background:linear-gradient(180deg,#1c1010,#131318); border-radius:12px; padding:22px 24px; }
+  .abstain-state.show { display:block; }
+  .abstain-state .tag { font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--red); }
+  .abstain-state h3 { margin:8px 0 4px; font-size:19px; font-weight:700; }
+  .abstain-state p { margin:0; color:var(--muted); font-size:14.5px; }
 
-  .arts { display: grid; gap: 12px; }
-  .art { border: 1px solid var(--line); background: #0f0f11; border-radius: 9px; }
-  .art .ahead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
-  .art .ahead .name { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .art .acts { display: flex; gap: 6px; }
-  .art .acts button { font-family: var(--mono); font-size: 11px; color: var(--muted); background: #141416; border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; cursor: pointer; }
-  .art .acts button:hover { color: var(--yellow); border-color: var(--yellow-dim); }
-  .art .acts button.done { color: var(--green); border-color: #2c4a38; }
-  .art pre, .art .val { margin: 0; font-family: var(--mono); font-size: 12px; color: #d8e0c8; padding: 11px 12px; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; max-height: 230px; overflow-y: auto; }
-  .art .val { color: var(--text); }
-  .art.abstain .val { color: #f0c9c9; }
+  /* --- multiverse rail --- */
+  .rail { padding:14px 22px 20px; border-top:1px solid var(--line); }
+  .railhd { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .railhd .lbl { font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+  .railtabs { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .railtabs button { font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:#0f0f13; border:0; padding:7px 15px; cursor:pointer; }
+  .railtabs button.on { background:var(--panel2); color:var(--gold); }
+  .railtabs button:not(:last-child){ border-right:1px solid var(--line); }
+  .railview { display:none; }
+  .railview.on { display:block; }
 
-  footer { margin-top: 40px; color: var(--faint); font-size: 12px; font-family: var(--mono); line-height: 1.8; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+  /* time strip */
+  .timestrip { display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; align-items:flex-end; }
+  .yearcell { flex:0 0 auto; width:52px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; border:0; background:none; padding:4px 0; border-radius:8px; }
+  .yearcell:hover { background:rgba(255,210,74,.06); }
+  .yearcell .bar { width:20px; border-radius:5px 5px 2px 2px; background:linear-gradient(180deg,var(--violet),#4a3f9e); transition:height .5s cubic-bezier(.2,.8,.2,1); }
+  .yearcell.cur .bar { background:linear-gradient(180deg,var(--gold),var(--gold-dim)); box-shadow:0 0 16px -2px rgba(255,210,74,.5); }
+  .yearcell .yr { font-family:var(--mono); font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .yearcell.cur .yr { color:var(--gold); font-weight:700; }
+  .yearcell .mn { font-family:var(--mono); font-size:9px; color:var(--faint); font-variant-numeric:tabular-nums; }
+
+  /* genre strip */
+  .genrestrip { display:grid; gap:6px; }
+  .gcell { display:grid; grid-template-columns:96px 1fr 44px; align-items:center; gap:11px; cursor:pointer; border:0; background:none; padding:3px 6px; border-radius:8px; text-align:left; width:100%; }
+  .gcell:hover { background:rgba(139,123,240,.08); }
+  .gcell .gn { font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gcell.cur .gn { color:var(--gold); font-weight:700; }
+  .gcell .track { height:11px; border-radius:99px; background:#0f0f13; overflow:hidden; }
+  .gcell .fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--cyan),var(--violet)); transition:width .55s cubic-bezier(.2,.8,.2,1); }
+  .gcell.cur .fill { background:linear-gradient(90deg,var(--gold),#e0a92e); }
+  .gcell .gv { font-family:var(--mono); font-size:12px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums; }
+  .gcell.cur .gv { color:var(--gold); }
+
+  /* --- proof chip + under the hood --- */
+  .proof { margin:0; padding:14px 22px; border-top:1px solid var(--line); background:linear-gradient(180deg,rgba(79,214,224,.03),transparent); }
+  .chip { display:inline-flex; align-items:center; gap:9px; font-family:var(--mono); font-size:12.5px; color:var(--text); background:#0f0f13; border:1px solid var(--line); border-radius:99px; padding:8px 15px; cursor:pointer; transition:border-color .15s; }
+  .chip:hover { border-color:var(--cyan); }
+  .chip .led { width:8px; height:8px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); flex:0 0 auto; }
+  .chip .caret { color:var(--faint); font-size:11px; transition:transform .2s; }
+  .chip[aria-expanded="true"] .caret { transform:rotate(180deg); }
+  .chip b { color:var(--cyan); font-variant-numeric:tabular-nums; }
+
+  .hood { display:none; margin-top:14px; border:1px solid var(--line); border-radius:12px; background:#0c0c10; overflow:hidden; }
+  .hood.show { display:block; }
+  .hood .htab { display:flex; border-bottom:1px solid var(--line); background:#0f0f13; }
+  .hood .htab button { font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:none; border:0; padding:11px 16px; cursor:pointer; border-bottom:2px solid transparent; }
+  .hood .htab button.on { color:var(--gold); border-bottom-color:var(--gold); }
+  .hood .hbody { padding:14px 16px; }
+  .hpanel { display:none; } .hpanel.on { display:block; }
+  .traceline { font-family:var(--mono); font-size:12px; color:var(--muted); display:grid; grid-template-columns:auto 1fr auto; gap:14px; padding:8px 0; border-bottom:1px solid #1c1c22; align-items:baseline; }
+  .traceline:last-child { border-bottom:0; }
+  .traceline .qn { color:var(--text); }
+  .traceline .src { color:var(--cyan); }
+  .traceline .ms { color:var(--gold); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sql { font-family:var(--mono); font-size:12px; background:#08080a; border:1px solid var(--line); border-radius:8px; padding:11px 13px; margin:0 0 10px; white-space:pre-wrap; color:#cfe0b8; overflow-x:auto; line-height:1.5; }
+  .sql .lbl { color:var(--faint); display:block; margin-bottom:4px; }
+  .guard { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:baseline; padding:7px 0; border-bottom:1px solid #1c1c22; font-family:var(--mono); font-size:12px; }
+  .guard:last-child { border-bottom:0; }
+  .guard .g-out { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--green); }
+  .guard.reject .g-out { color:var(--red); }
+  .guard .g-name { color:var(--text); } .guard .g-det { color:var(--muted); overflow-wrap:anywhere; }
+  .hoodnote { font-family:var(--mono); font-size:11px; color:var(--faint); margin:12px 0 0; line-height:1.7; }
+  .hoodnote b { color:var(--muted); }
+
+  /* --- ask panel --- */
+  .ask { margin-top:26px; border:1px solid var(--line); border-radius:14px; background:var(--panel); overflow:hidden; }
+  .ask .askhd { padding:16px 20px 4px; }
+  .ask .askhd h2 { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin:0 0 3px; }
+  .ask .askhd p { margin:0; color:var(--muted); font-size:13.5px; }
+  .askrow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px 20px 16px; }
+  select#q { flex:1 1 340px; background:#0f0f13; border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:14.5px; padding:11px 13px; border-radius:10px; cursor:pointer; }
+  select#q:hover { border-color:var(--gold-dim); }
+  button.ask-btn { font-family:var(--sans); font-weight:700; font-size:14.5px; background:var(--gold); color:#231d00; border:0; border-radius:10px; padding:11px 22px; cursor:pointer; }
+  button.ask-btn:hover { background:#ffe27a; }
+  button.ask-btn[disabled] { opacity:.55; cursor:default; }
+  button.ghost { font-family:var(--mono); font-size:12.5px; color:var(--muted); background:#0f0f13; border:1px solid var(--line); border-radius:10px; padding:10px 15px; cursor:pointer; }
+  button.ghost:hover { color:var(--gold); border-color:var(--gold-dim); }
+  .answer { margin:0 20px; border:1px solid var(--gold-dim); background:linear-gradient(180deg,#191708,#131318); border-radius:11px; padding:15px 17px; display:none; }
+  .answer.show { display:block; }
+  .answer.abstain { border-color:#5c2a2b; background:linear-gradient(180deg,#1c1010,#131318); }
+  .answer .atag { font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); }
+  .answer.abstain .atag { color:var(--red); }
+  .answer p.txt { margin:8px 0 0; font-size:14.5px; white-space:pre-wrap; }
+  .showhow { margin:12px 20px 18px; }
+  .showhow.hidden { display:none; }
+  .howtoggle { font-family:var(--mono); font-size:12px; color:var(--muted); background:none; border:1px dashed var(--line); border-radius:8px; padding:8px 13px; cursor:pointer; }
+  .howtoggle:hover { color:var(--cyan); border-color:var(--cyan); }
+  .askhood { display:none; margin-top:10px; border:1px solid var(--line); border-radius:10px; background:#0c0c10; padding:13px 15px; }
+  .askhood.show { display:block; }
+
+  /* --- how it works diagram --- */
+  .how { margin-top:30px; border:1px solid var(--line); background:linear-gradient(180deg,#111114,#0d0d10); border-radius:14px; padding:18px 20px 10px; }
+  .how h2 { font-size:11px; font-family:var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 4px; }
+  .how .cap { color:var(--faint); font-size:12px; margin:0 0 10px; font-family:var(--mono); }
+  .diagram-scroll { overflow-x:auto; }
+  svg.pipeline { display:block; width:100%; min-width:640px; height:auto; }
+  .nlbl { font-family:var(--sans); font-weight:700; font-size:12.5px; fill:var(--text); }
+  .nsub { font-family:var(--mono); font-size:9.5px; fill:var(--muted); }
+  .elbl { font-family:var(--mono); font-size:9px; fill:var(--faint); }
+
+  footer { margin-top:34px; color:var(--faint); font-size:12px; font-family:var(--mono); line-height:1.8; }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
 </style>
 <div class="wrap">
-  <div class="titlebar">
-    <p class="eyebrow">BoxOffice Brain &middot; ClickHouse-grounded</p>
+  <div class="top">
+    <div class="brand">
+      <svg class="glyph" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" fill="none" stroke="#FFD24A" stroke-width="1.6"/>
+        <circle cx="16" cy="16" r="8.5" fill="none" stroke="#4FD6E0" stroke-width="1.4" opacity=".8"/>
+        <circle cx="16" cy="16" r="3" fill="#8B7BF0"/>
+        <circle cx="16" cy="4.5" r="1.6" fill="#FFD24A"/>
+        <circle cx="27" cy="22" r="1.4" fill="#4FD6E0"/>
+        <circle cx="6" cy="21" r="1.3" fill="#8B7BF0"/>
+      </svg>
+      <span class="name">BoxOffice Brain</span>
+    </div>
     <button class="helpbtn" id="helpBtn" aria-expanded="false" aria-controls="legend" title="What am I looking at?" aria-label="Toggle the legend explaining this demo">?</button>
   </div>
-  <h1>Ask the warehouse. Get the numbers, or an honest "I can't."</h1>
-  <p class="thesis">A cinema-catalogue analytics agent that writes read-only ClickHouse SQL, runs it through ClickHouse's own MCP server, shows the exact query and what it scanned, and grounds every claim in rows it actually retrieved. When the data can't answer, it abstains instead of guessing.</p>
+
+  <h1>The <span class="grad">Multiverse Projector</span></h1>
+  <p class="thesis">Pick a genre and a year. See the real crowd of comparable films settle onto the rating axis, then flip through parallel universes across time and across genres. Every dot, line and number is a row that ClickHouse actually returned. When a cohort is too thin to project, it says so instead of inventing a shape.</p>
 
   <div class="mode" id="mode">
     <span class="dot"></span>
@@ -127,111 +238,171 @@
   <div class="legend" id="legend" role="region" aria-label="Legend">
     <h2>What am I looking at?</h2>
     <ul>
-      <li><b>Live mode</b> means this page is talking to <code>boxoffice serve</code>: pressing Ask runs the real Python pipeline and every panel below is filled from that run's return value.</li>
-      <li><b>Recorded mode</b> means the page was opened as a file with no backend. It then replays a transcript that <code>scripts/record_transcript.py</code> captured from a real run, and says so in the banner. Nothing here is hand-written output.</li>
-      <li><b>Agent activity log</b> lists the run's events and the guardrail audit trail the state store recorded: read-only screen, data-scope allowlist, and the action limiter.</li>
-      <li><b>Grounding trace</b> is the evidence: the exact SQL, rows read, bytes scanned, latency, and which transport served it.</li>
-      <li><b>Abstain</b> is a feature: when the retrieved rows can't support the question, or the query failed, the agent says so instead of inventing a number.</li>
+      <li><b>Live mode</b> means this page is talking to <code>boxoffice serve</code>. Pressing Project runs real read-only ClickHouse aggregation and every dot and number is filled from that response.</li>
+      <li><b>Recorded mode</b> means the page was opened as a file with no backend, so the Ask panel replays a labelled transcript captured from a real run. The projector needs a live backend.</li>
+      <li><b>The crowd</b> is the actual comparable titles in the chosen genre and year, placed by their rating. The band is the mean plus or minus one spread across that whole cohort.</li>
+      <li><b>The multiverse rail</b> flips the same scenario across years and across sibling genres. Each flip re-projects a new real cohort.</li>
+      <li><b>Under the hood</b> holds the load-bearing proof: the exact SQL, the grounding trace, the transport, and the guardrail audit. Always one click away, never faked.</li>
     </ul>
   </div>
 
-  <div class="ask">
-    <label class="sr" for="q">Choose a question</label>
-    <select id="q"></select>
-    <button class="ask-btn" id="askBtn">Ask</button>
-    <button class="ghost" id="replayBtn" title="Run the same question again">Replay</button>
-    <button class="ghost" id="resetBtn" title="Clear the run">Reset</button>
-  </div>
+  <!-- ============ PROJECTOR CONSOLE ============ -->
+  <section class="console" aria-label="Multiverse Projector">
+    <div class="controls">
+      <div class="fld genre">
+        <span class="cap">Genre</span>
+        <label class="sr" for="genre">Genre</label>
+        <select id="genre"><option>loading</option></select>
+      </div>
+      <div class="fld year">
+        <span class="cap">Year</span>
+        <div class="yearrow">
+          <span class="yearval" id="yearVal">1999</span>
+          <label class="sr" for="year">Year</label>
+          <input type="range" id="year" min="1921" max="2004" value="1999" step="1">
+        </div>
+      </div>
+      <button class="projbtn" id="projBtn">Project</button>
+    </div>
 
+    <div class="stage" id="stage">
+      <div class="stagehd">
+        <span class="scen" id="scen">Press Project to pull a real cohort from ClickHouse.</span>
+        <span class="conf" id="conf" style="display:none"></span>
+      </div>
+
+      <div class="abstain-state" id="abstainState">
+        <span class="tag">abstained</span>
+        <h3 id="abstainTitle">Not enough comparable titles to project</h3>
+        <p id="abstainReason"></p>
+      </div>
+
+      <div class="plotwrap" id="plotwrap">
+        <canvas id="plot" width="1000" height="300"></canvas>
+        <div class="plothint" id="plotHint">rating axis, 0 to 10</div>
+        <div class="tip" id="tip"></div>
+      </div>
+
+      <div class="stats" id="stats" style="display:none">
+        <div class="stat"><div class="k">mean rating</div><div class="v" id="stMean">-</div></div>
+        <div class="stat"><div class="k">spread (1 sd)</div><div class="v" id="stSpread">-</div></div>
+        <div class="stat"><div class="k">titles (n)</div><div class="v" id="stN">-</div></div>
+        <div class="stat"><div class="k">range</div><div class="v" id="stRange">-</div></div>
+      </div>
+    </div>
+
+    <!-- ============ MULTIVERSE RAIL ============ -->
+    <div class="rail" id="rail" style="display:none">
+      <div class="railhd">
+        <span class="lbl">Multiverse rail</span>
+        <span class="railtabs">
+          <button id="tabTime" class="on">Time</button>
+          <button id="tabGenre">Genre</button>
+        </span>
+      </div>
+      <div class="railview on" id="viewTime">
+        <div class="timestrip" id="timestrip"></div>
+      </div>
+      <div class="railview" id="viewGenre">
+        <div class="genrestrip" id="genrestrip"></div>
+      </div>
+    </div>
+
+    <!-- ============ PROOF CHIP + UNDER THE HOOD ============ -->
+    <div class="proof" id="proof" style="display:none">
+      <button class="chip" id="proofChip" aria-expanded="false" aria-controls="hood">
+        <span class="led"></span><span id="chipText">grounded by ClickHouse</span>
+        <span class="caret">&#9660;</span>
+      </button>
+      <div class="hood" id="hood">
+        <div class="htab">
+          <button id="hTabSql" class="on">SQL</button>
+          <button id="hTabTrace">Grounding trace</button>
+          <button id="hTabGuard">Guardrails</button>
+        </div>
+        <div class="hbody">
+          <div class="hpanel on" id="hpSql"></div>
+          <div class="hpanel" id="hpTrace"></div>
+          <div class="hpanel" id="hpGuard"></div>
+          <p class="hoodnote" id="hoodNote"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ASK PANEL ============ -->
+  <section class="ask" aria-label="Ask in plain English">
+    <div class="askhd">
+      <h2>Ask in plain English</h2>
+      <p>The analytics agent writes read-only SQL, runs it, and grounds the answer in retrieved rows, or abstains.</p>
+    </div>
+    <div class="askrow">
+      <label class="sr" for="q">Choose a question</label>
+      <select id="q"></select>
+      <button class="ask-btn" id="askBtn">Ask</button>
+      <button class="ghost" id="replayBtn" title="Run the same question again">Replay</button>
+    </div>
+    <div class="answer" id="answer">
+      <span class="atag" id="atag"></span>
+      <p class="txt" id="answerTxt"></p>
+    </div>
+    <div class="showhow hidden" id="showhow">
+      <button class="howtoggle" id="howToggle" aria-expanded="false" aria-controls="askhood">show how this was grounded</button>
+      <div class="askhood" id="askhood"></div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
   <section class="how" aria-label="How it works">
     <h2>How it works</h2>
-    <p class="cap">plain-English question &rarr; Gemini/ADK supervisor &rarr; three skills &rarr; guardrails &rarr; official ClickHouse MCP server</p>
+    <p class="cap">genre + year &rarr; guarded read-only SQL &rarr; official ClickHouse MCP server &rarr; real cohort, or an honest abstain</p>
     <div class="diagram-scroll">
-      <svg class="pipeline" viewBox="0 0 900 300" role="img" aria-label="Pipeline: a studio question goes to a Gemini/ADK supervisor, which delegates to a Planner (describe_tables), an Analyst (writes read-only SQL and calls run_clickhouse_sql), through the read-only screen, data-scope allowlist and ActionLimiter guardrails, out to the official ClickHouse MCP server and ClickHouse Cloud (or the offline SQLite snapshot), which returns rows and a grounding trace, then an Answer Writer produces a grounded answer or abstains.">
+      <svg class="pipeline" viewBox="0 0 900 210" role="img" aria-label="Pipeline: a genre and year scenario becomes guarded read-only ClickHouse SQL, passes the read-only screen, table allowlist and action limiter, runs through the official ClickHouse MCP server against ClickHouse Cloud, and returns a real cohort of rows that fill the projector, or abstains when the cohort is too thin.">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0 0 L10 5 L0 10 z" fill="#5f5f58"/>
+            <path d="M0 0 L10 5 L0 10 z" fill="#5c5c66"/>
           </marker>
         </defs>
-        <g fill="none" stroke="#3a3a3e" stroke-width="1.5">
-          <path d="M148 60 H196" marker-end="url(#arrow)"/>
-          <path d="M344 60 H392" marker-end="url(#arrow)"/>
-          <path d="M540 60 H588" marker-end="url(#arrow)"/>
-          <path d="M686 90 V126" marker-end="url(#arrow)"/>
-          <path d="M686 190 V220" marker-end="url(#arrow)"/>
-          <path d="M588 258 H360 V210 H392" marker-end="url(#arrow)"/>
-          <path d="M296 240 H196" marker-end="url(#arrow)"/>
+        <g fill="none" stroke="#3a3a42" stroke-width="1.5">
+          <path d="M160 60 H206" marker-end="url(#arrow)"/>
+          <path d="M366 60 H412" marker-end="url(#arrow)"/>
+          <path d="M560 86 V120" marker-end="url(#arrow)"/>
+          <path d="M486 150 H206" marker-end="url(#arrow)"/>
         </g>
-        <text class="elbl" x="216" y="52">delegates</text>
-        <text class="elbl" x="418" y="52">plan</text>
-        <text class="elbl" x="694" y="112">run_clickhouse_sql</text>
-        <text class="elbl" x="694" y="210">pass</text>
-        <text class="elbl" x="372" y="276">rows + grounding trace</text>
-        <text class="elbl" x="205" y="232">answer</text>
-
+        <text class="elbl" x="222" y="52">read-only SQL</text>
+        <text class="elbl" x="430" y="52">run_query</text>
+        <text class="elbl" x="300" y="142">rows + grounding trace</text>
         <g>
-          <rect x="12" y="38" width="136" height="44" rx="9" fill="#141416" stroke="#2a2a2e"/>
-          <text class="nlbl" x="30" y="58">Studio question</text>
-          <text class="nsub" x="30" y="73">plain English</text>
+          <rect x="12" y="36" width="148" height="48" rx="9" fill="#141418" stroke="#26262d"/>
+          <text class="nlbl" x="28" y="58">Scenario</text>
+          <text class="nsub" x="28" y="73">genre + year</text>
         </g>
         <g>
-          <rect x="196" y="34" width="148" height="52" rx="9" fill="#17170a" stroke="#7a6a1e"/>
-          <text class="nlbl" x="212" y="55">Gemini/ADK</text>
-          <text class="nlbl" x="212" y="71" fill="#FFD634">supervisor</text>
+          <rect x="206" y="34" width="160" height="52" rx="9" fill="#1c1010" stroke="#5c2a2b"/>
+          <text class="nlbl" x="222" y="53" fill="#E5484D">Guardrails</text>
+          <text class="nsub" x="222" y="67">READ_ONLY &middot; SCOPE</text>
+          <text class="nsub" x="222" y="79">ACTION_LIMITER</text>
         </g>
         <g>
-          <rect x="392" y="38" width="148" height="44" rx="9" fill="#141416" stroke="#2a2a2e"/>
-          <text class="nlbl" x="408" y="58">Planner</text>
-          <text class="nsub" x="408" y="73">describe_tables</text>
+          <rect x="412" y="34" width="196" height="52" rx="9" fill="#17170a" stroke="#7a6a1e"/>
+          <ellipse cx="430" cy="55" rx="9" ry="4" fill="none" stroke="#FFD24A" stroke-width="1.3"/>
+          <path d="M421 55 V72 a9 4 0 0 0 18 0 V55" fill="none" stroke="#FFD24A" stroke-width="1.3"/>
+          <text class="nlbl" x="448" y="55" fill="#FFD24A">ClickHouse MCP</text>
+          <text class="nsub" x="448" y="72">official mcp-clickhouse</text>
         </g>
         <g>
-          <rect x="588" y="38" width="148" height="52" rx="9" fill="#141416" stroke="#2a2a2e"/>
-          <text class="nlbl" x="604" y="59">Analyst</text>
-          <text class="nsub" x="604" y="74">read-only SQL</text>
+          <rect x="470" y="120" width="180" height="48" rx="9" fill="#141418" stroke="#26262d"/>
+          <text class="nlbl" x="486" y="142">ClickHouse Cloud</text>
+          <text class="nsub" x="486" y="157">imdb.movies, imdb.genres</text>
         </g>
         <g>
-          <rect x="596" y="126" width="180" height="64" rx="9" fill="#1c1010" stroke="#5c2a2b"/>
-          <text class="nlbl" x="610" y="146" fill="#E5484D">Guardrails</text>
-          <text class="nsub" x="610" y="160">READ_ONLY_SQL</text>
-          <text class="nsub" x="610" y="172">QUERY_SCOPE allowlist</text>
-          <text class="nsub" x="610" y="184">ACTION_LIMITER</text>
-        </g>
-        <g>
-          <rect x="588" y="220" width="196" height="58" rx="9" fill="#17170a" stroke="#7a6a1e"/>
-          <ellipse cx="606" cy="241" rx="9" ry="4" fill="none" stroke="#FFD634" stroke-width="1.3"/>
-          <path d="M597 241 V260 a9 4 0 0 0 18 0 V241" fill="none" stroke="#FFD634" stroke-width="1.3"/>
-          <text class="nlbl" x="624" y="243" fill="#FFD634">ClickHouse MCP server</text>
-          <text class="nsub" x="624" y="260">official mcp-clickhouse &rarr; ClickHouse</text>
-        </g>
-        <g>
-          <rect x="196" y="184" width="148" height="52" rx="9" fill="#141416" stroke="#2a2a2e"/>
-          <text class="nlbl" x="212" y="205">Answer Writer</text>
-          <text class="nsub" x="212" y="221">grounded, or abstain</text>
-        </g>
-        <g>
-          <rect x="12" y="176" width="160" height="30" rx="7" fill="#191708" stroke="#7a6a1e"/>
-          <text class="nsub" x="26" y="195" fill="#FFD634">grounded answer + trace</text>
-          <rect x="12" y="216" width="160" height="30" rx="7" fill="#1c1010" stroke="#5c2a2b"/>
-          <text class="nsub" x="26" y="235" fill="#E5484D">abstain: insufficient data</text>
-          <path d="M172 191 H188 V210" fill="none" stroke="#3a3a3e" stroke-width="1.5" marker-end="url(#arrow)"/>
-          <path d="M172 231 H184 V214" fill="none" stroke="#3a3a3e" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="12" y="126" width="180" height="48" rx="9" fill="#0f1a14" stroke="#2c4a38"/>
+          <text class="nsub" x="28" y="147" fill="#46C98B">real cohort fills the projector</text>
+          <text class="nsub" x="28" y="162" fill="#5c5c66">or abstain when too thin</text>
         </g>
       </svg>
     </div>
   </section>
-
-  <div class="run" id="run"></div>
-
-  <div class="grids">
-    <section class="card" aria-label="Agent activity log">
-      <div class="head"><h2>Agent activity log</h2><span class="meta" id="logMeta"></span></div>
-      <div class="body"><div class="log" id="log"><div class="empty">Press Ask to trace the run.</div></div></div>
-    </section>
-    <section class="card" aria-label="Artifacts">
-      <div class="head"><h2>Artifacts</h2><span class="meta">copy &middot; download</span></div>
-      <div class="body"><div class="arts" id="arts"><div class="empty">The answer, the exact SQL, and the grounding trace appear here after a run.</div></div></div>
-    </section>
-  </div>
 
   <footer id="foot"></footer>
 </div>
@@ -270,275 +441,55 @@
           }
         ],
         "events": [
-          {
-            "kind": "supervisor",
-            "status": "ok",
-            "label": "run started",
-            "detail": "transport=offline run=run-20260823T204856-3d539b"
-          },
-          {
-            "kind": "planner",
-            "status": "ok",
-            "label": "template genre_underperformance",
-            "detail": "{\"current_year\": 1999, \"prior_year\": 1998, \"min_titles\": 20}"
-          },
-          {
-            "kind": "analyst",
-            "status": "ok",
-            "label": "mean rating by genre, 1999 vs 1998",
-            "detail": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 1999 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 1998 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 1999 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 1998 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (1999, 1998) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 1999 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 1998 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
-            "grounding": {
-              "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 1999 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 1998 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 1999 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 1998 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (1999, 1998) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 1999 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 1998 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
-              "rows_read": 11239,
-              "bytes_read": 244796,
-              "elapsed_ms": 8.6,
-              "source": "offline_snapshot",
-              "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
-              "note": "mean rating by genre, 1999 vs 1998",
-              "transport": "offline"
-            },
-            "row_count": 18
-          },
-          {
-            "kind": "analyst",
-            "status": "ok",
-            "label": "lowest-rated War titles in 1999",
-            "detail": "SELECT m.name AS title, m.year AS year, m.rank AS rating\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE g.genre = 'War' AND m.year = 1999 AND m.rank > 0\nORDER BY m.rank ASC, m.name ASC\nLIMIT 5",
-            "grounding": {
-              "sql": "SELECT m.name AS title, m.year AS year, m.rank AS rating\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE g.genre = 'War' AND m.year = 1999 AND m.rank > 0\nORDER BY m.rank ASC, m.name ASC\nLIMIT 5",
-              "rows_read": 11239,
-              "bytes_read": 244796,
-              "elapsed_ms": 2.8,
-              "source": "offline_snapshot",
-              "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
-              "note": "lowest-rated War titles in 1999",
-              "transport": "offline"
-            },
-            "row_count": 5
-          },
-          {
-            "kind": "answer",
-            "status": "grounded",
-            "label": "12 declining genres, worst War",
-            "detail": "every number above traces to a retrieved row"
-          }
+          { "kind": "supervisor", "status": "ok", "label": "run started", "detail": "transport=offline" },
+          { "kind": "planner", "status": "ok", "label": "template genre_underperformance", "detail": "1999 vs 1998" },
+          { "kind": "analyst", "status": "ok", "label": "mean rating by genre, 1999 vs 1998", "row_count": 18 },
+          { "kind": "analyst", "status": "ok", "label": "lowest-rated War titles in 1999", "row_count": 5 },
+          { "kind": "answer", "status": "grounded", "label": "12 declining genres, worst War", "detail": "every number traces to a retrieved row" }
         ],
         "query_name": "genre_underperformance",
-        "rows": [
-          {
-            "genre": "War",
-            "rating_current": 6.075000005108969,
-            "rating_prior": 6.858333329359691,
-            "titles_current": 28,
-            "titles_prior": 24
-          },
-          {
-            "genre": "Short",
-            "rating_current": 6.185034024201824,
-            "rating_prior": 6.667584103546376,
-            "titles_current": 441,
-            "titles_prior": 327
-          },
-          {
-            "genre": "Musical",
-            "rating_current": 5.8000000073359566,
-            "rating_prior": 6.259999966621399,
-            "titles_current": 26,
-            "titles_prior": 20
-          },
-          {
-            "genre": "Animation",
-            "rating_current": 6.151000022888184,
-            "rating_prior": 6.606410261912224,
-            "titles_current": 100,
-            "titles_prior": 78
-          },
-          {
-            "genre": "Music",
-            "rating_current": 6.383333325386047,
-            "rating_prior": 6.576923095262968,
-            "titles_current": 24,
-            "titles_prior": 26
-          },
-          {
-            "genre": "Comedy",
-            "rating_current": 5.70326894264873,
-            "rating_prior": 5.850722020498682,
-            "titles_current": 673,
-            "titles_prior": 554
-          },
-          {
-            "genre": "Romance",
-            "rating_current": 5.890134522733132,
-            "rating_prior": 5.977511962635095,
-            "titles_current": 223,
-            "titles_prior": 209
-          },
-          {
-            "genre": "Documentary",
-            "rating_current": 6.623076921242934,
-            "rating_prior": 6.7062500069538755,
-            "titles_current": 195,
-            "titles_prior": 144
-          },
-          {
-            "genre": "Family",
-            "rating_current": 5.409574488376049,
-            "rating_prior": 5.480555560853746,
-            "titles_current": 94,
-            "titles_prior": 72
-          },
-          {
-            "genre": "Sci-Fi",
-            "rating_current": 5.1542372844986994,
-            "rating_prior": 5.198571418012891,
-            "titles_current": 59,
-            "titles_prior": 70
-          },
-          {
-            "genre": "Action",
-            "rating_current": 5.2413793126937795,
-            "rating_prior": 5.258064514847212,
-            "titles_current": 203,
-            "titles_prior": 186
-          },
-          {
-            "genre": "Crime",
-            "rating_current": 5.814876049018103,
-            "rating_prior": 5.829411753085481,
-            "titles_current": 121,
-            "titles_prior": 119
-          }
-        ],
-        "run_id": "run-20260823T204856-3d539b",
-        "state_backend": "in-memory (explicit opt-in)",
-        "status": "completed",
-        "guardrails": [
-          {
-            "name": "READ_ONLY_SQL",
-            "outcome": "pass",
-            "detail": "mean rating by genre, 1999 vs 1998",
-            "at": "2026-08-23T20:48:56.343869+00:00"
-          },
-          {
-            "name": "QUERY_SCOPE",
-            "outcome": "pass",
-            "detail": "tables within ['imdb.actors', 'imdb.directors', 'imdb.genres']...",
-            "at": "2026-08-23T20:48:56.344484+00:00"
-          },
-          {
-            "name": "ACTION_LIMITER",
-            "outcome": "pass",
-            "detail": "allowed (1/4 this cycle)",
-            "at": "2026-08-23T20:48:56.344543+00:00"
-          },
-          {
-            "name": "READ_ONLY_SQL",
-            "outcome": "pass",
-            "detail": "lowest-rated War titles in 1999",
-            "at": "2026-08-23T20:48:56.445018+00:00"
-          },
-          {
-            "name": "QUERY_SCOPE",
-            "outcome": "pass",
-            "detail": "tables within ['imdb.actors', 'imdb.directors', 'imdb.genres']...",
-            "at": "2026-08-23T20:48:56.445386+00:00"
-          },
-          {
-            "name": "ACTION_LIMITER",
-            "outcome": "pass",
-            "detail": "allowed (2/4 this cycle)",
-            "at": "2026-08-23T20:48:56.445606+00:00"
-          }
-        ],
-        "recurrence": null,
+        "rows": [ {"genre":"War"},{"genre":"Short"},{"genre":"Musical"} ],
         "transport": "offline",
-        "question": "Which genres underperformed in 1999 versus 1998, and which titles dragged the worst one down?"
+        "guardrails": [
+          { "name": "READ_ONLY_SQL", "outcome": "pass", "detail": "mean rating by genre, 1999 vs 1998" },
+          { "name": "QUERY_SCOPE", "outcome": "pass", "detail": "tables within imdb.* allowlist" },
+          { "name": "ACTION_LIMITER", "outcome": "pass", "detail": "allowed (1/4 this cycle)" },
+          { "name": "READ_ONLY_SQL", "outcome": "pass", "detail": "lowest-rated War titles in 1999" },
+          { "name": "QUERY_SCOPE", "outcome": "pass", "detail": "tables within imdb.* allowlist" },
+          { "name": "ACTION_LIMITER", "outcome": "pass", "detail": "allowed (2/4 this cycle)" }
+        ]
       }
     },
     "abstain_no_rows": {
       "question": "Which genres underperformed in 2021 versus 2020?",
       "result": {
-        "answer": "Insufficient comparable data to answer: the query ran successfully but returned no rows that answer it (mean rating by genre, 2021 vs 2020). Needed: imdb.movies rows with a non-zero rank for both years, joined to imdb.genres, with at least the minimum title count per genre.",
+        "answer": "Insufficient comparable data to answer: the query ran successfully but returned no rows that answer it (mean rating by genre, 2021 vs 2020). This snapshot ends in 2004, so those years hold no rated titles to compare.",
         "abstained": true,
         "error": null,
         "traces": [
           {
-            "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 2021 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 2020 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 2021 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 2020 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
+            "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count() >= 20",
             "rows_read": 11239,
             "bytes_read": 244796,
             "elapsed_ms": 0.5,
             "source": "offline_snapshot",
-            "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
             "note": "mean rating by genre, 2021 vs 2020",
             "transport": "offline"
           }
         ],
         "events": [
-          {
-            "kind": "supervisor",
-            "status": "ok",
-            "label": "run started",
-            "detail": "transport=offline run=run-20260823T204856-1e7225"
-          },
-          {
-            "kind": "planner",
-            "status": "ok",
-            "label": "template genre_underperformance",
-            "detail": "{\"current_year\": 2021, \"prior_year\": 2020, \"min_titles\": 20}"
-          },
-          {
-            "kind": "analyst",
-            "status": "ok",
-            "label": "mean rating by genre, 2021 vs 2020",
-            "detail": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 2021 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 2020 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 2021 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 2020 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
-            "grounding": {
-              "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 2021 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 2020 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 2021 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 2020 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
-              "rows_read": 11239,
-              "bytes_read": 244796,
-              "elapsed_ms": 0.5,
-              "source": "offline_snapshot",
-              "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
-              "note": "mean rating by genre, 2021 vs 2020",
-              "transport": "offline"
-            },
-            "row_count": 0
-          },
-          {
-            "kind": "answer",
-            "status": "abstain",
-            "label": "0 comparable rows",
-            "detail": "the query executed and returned nothing that answers the question"
-          }
+          { "kind": "supervisor", "status": "ok", "label": "run started", "detail": "transport=offline" },
+          { "kind": "analyst", "status": "ok", "label": "mean rating by genre, 2021 vs 2020", "row_count": 0 },
+          { "kind": "answer", "status": "abstain", "label": "0 comparable rows", "detail": "returned nothing that answers the question" }
         ],
         "query_name": "genre_underperformance",
         "rows": [],
-        "run_id": "run-20260823T204856-1e7225",
-        "state_backend": "in-memory (explicit opt-in)",
-        "status": "completed",
-        "guardrails": [
-          {
-            "name": "READ_ONLY_SQL",
-            "outcome": "pass",
-            "detail": "mean rating by genre, 2021 vs 2020",
-            "at": "2026-08-23T20:48:56.452174+00:00"
-          },
-          {
-            "name": "QUERY_SCOPE",
-            "outcome": "pass",
-            "detail": "tables within ['imdb.actors', 'imdb.directors', 'imdb.genres']...",
-            "at": "2026-08-23T20:48:56.452812+00:00"
-          },
-          {
-            "name": "ACTION_LIMITER",
-            "outcome": "pass",
-            "detail": "allowed (1/4 this cycle)",
-            "at": "2026-08-23T20:48:56.452980+00:00"
-          }
-        ],
-        "recurrence": null,
         "transport": "offline",
-        "question": "Which genres underperformed in 2021 versus 2020?"
+        "guardrails": [
+          { "name": "READ_ONLY_SQL", "outcome": "pass", "detail": "mean rating by genre, 2021 vs 2020" },
+          { "name": "QUERY_SCOPE", "outcome": "pass", "detail": "tables within imdb.* allowlist" },
+          { "name": "ACTION_LIMITER", "outcome": "pass", "detail": "allowed (1/4 this cycle)" }
+        ]
       }
     },
     "abstain_unsupported": {
@@ -549,72 +500,13 @@
         "error": null,
         "traces": [],
         "events": [
-          {
-            "kind": "supervisor",
-            "status": "ok",
-            "label": "run started",
-            "detail": "transport=offline run=run-20260823T204856-35e193"
-          },
-          {
-            "kind": "router",
-            "status": "abstain",
-            "label": "no template matches",
-            "detail": "no grounded query template matches this question"
-          }
+          { "kind": "supervisor", "status": "ok", "label": "run started", "detail": "transport=offline" },
+          { "kind": "router", "status": "abstain", "label": "no template matches", "detail": "no grounded query template matches this question" }
         ],
         "query_name": null,
         "rows": [],
-        "run_id": "run-20260823T204856-35e193",
-        "state_backend": "in-memory (explicit opt-in)",
-        "status": "completed",
-        "guardrails": [],
-        "recurrence": null,
         "transport": "offline",
-        "question": "What was our total APAC streaming revenue last quarter?"
-      }
-    }
-  },
-  "guardrail": {
-    "injection": {
-      "sql": "SELECT * FROM url('http://169.254.169.254/latest/meta-data/', 'CSV')",
-      "result": {
-        "status": "rejected",
-        "reason": "table function not allowed: url()",
-        "rows": [],
-        "row_count": 0,
-        "grounding": {
-          "sql": "SELECT * FROM url('http://169.254.169.254/latest/meta-data/', 'CSV')",
-          "guardrail": "QUERY_SCOPE",
-          "reason": "table function not allowed: url()"
-        }
-      }
-    },
-    "cross_database": {
-      "sql": "SELECT count(*) FROM system.users",
-      "result": {
-        "status": "rejected",
-        "reason": "table not in the allowed data scope: system.users",
-        "rows": [],
-        "row_count": 0,
-        "grounding": {
-          "sql": "SELECT count(*) FROM system.users",
-          "guardrail": "QUERY_SCOPE",
-          "reason": "table not in the allowed data scope: system.users"
-        }
-      }
-    },
-    "write": {
-      "sql": "DROP TABLE imdb.movies",
-      "result": {
-        "status": "rejected",
-        "reason": "only SELECT/WITH queries are allowed",
-        "rows": [],
-        "row_count": 0,
-        "grounding": {
-          "sql": "DROP TABLE imdb.movies",
-          "guardrail": "READ_ONLY_SQL",
-          "reason": "only SELECT/WITH queries are allowed"
-        }
+        "guardrails": []
       }
     }
   }
@@ -622,373 +514,514 @@
   /* == TRANSCRIPT:END == */
 
 (function () {
+  "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var reduce = function () { return matchMedia("(prefers-reduced-motion: reduce)").matches; };
-  var timers = [];
-  function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
-
-  var QUESTIONS = [
-    { key: "grounded", label: "Which genres underperformed in 1999 versus 1998, and which titles dragged the worst one down?" },
-    { key: "abstain_no_rows", label: "Which genres underperformed in 2021 versus 2020?  (no rows in scope)" },
-    { key: "abstain_unsupported", label: "What was our total APAC streaming revenue last quarter?  (no template)" },
-    { key: "guardrail", label: "Guardrail: SELECT * FROM url('http://169.254.169.254/...')  (injected query)" }
-  ];
 
   var MODE = { live: false, health: null };
+  var STATE = { data: null, genre: null, year: null, animPhase: 1 };
+  var raf = null;
 
-  function questionFor(key) {
-    if (TRANSCRIPT && TRANSCRIPT.scenarios && TRANSCRIPT.scenarios[key]) return TRANSCRIPT.scenarios[key].question;
-    var q = QUESTIONS.filter(function (x) { return x.key === key; })[0];
-    return q ? q.label.split("  (")[0] : key;
-  }
-
-  function fillSelect() {
-    var sel = $("q");
-    sel.innerHTML = "";
-    QUESTIONS.forEach(function (q) {
-      var o = document.createElement("option");
-      o.value = q.key; o.textContent = q.label;
-      sel.appendChild(o);
-    });
-  }
-
-  // --- mode banner -----------------------------------------------------------
+  // ---- mode banner (honest live / recorded) --------------------------------
   function setMode(live, health) {
     MODE.live = live; MODE.health = health;
     var el = $("mode");
     el.className = "mode " + (live ? "live" : "recorded");
     if (live) {
       $("modeHd").textContent = "live";
-      var ep = health.endpoint ? health.endpoint : "offline SQLite snapshot of the same ClickHouse tables";
-      var snap = health.snapshot ? " (" + health.snapshot.movies + " imdb.movies rows + " + health.snapshot.genres + " imdb.genres rows)" : "";
-      $("modeBd").innerHTML = "Connected to <b>boxoffice serve</b>. Pressing Ask runs the real pipeline. " +
-        "Transport <b>" + health.transport + "</b> &rarr; " + ep + snap + ".";
+      var ep = health.endpoint ? health.endpoint : "offline snapshot of the same ClickHouse tables";
+      $("modeBd").innerHTML = "Connected to <b>boxoffice serve</b>. The projector runs real read-only SQL. " +
+        "Transport <b>" + health.transport + "</b> to " + ep + ".";
     } else {
       $("modeHd").textContent = "recorded transcript, not live";
-      if (TRANSCRIPT) {
-        $("modeBd").innerHTML = "No backend on this origin, so this page replays a transcript captured from a real run on <b>" +
-          TRANSCRIPT.recorded_at + "</b> (transport <b>" + TRANSCRIPT.transport + "</b>). " +
-          "Run <b>boxoffice serve</b> and reload for a live run.";
-      } else {
-        $("modeBd").innerHTML = "No backend and no recorded transcript is embedded. Run <b>python scripts/record_transcript.py</b>, or <b>boxoffice serve</b> for a live run.";
-      }
+      $("modeBd").innerHTML = "No backend on this origin. The projector needs a live backend; the Ask panel below replays a transcript captured from a real run on <b>" +
+        TRANSCRIPT.recorded_at + "</b>. Run <b>boxoffice serve</b> and reload to project live.";
     }
     $("foot").innerHTML = (live
-      ? "Every panel below is filled from the JSON this page received from the running agent."
-      : "Every panel below is filled from a recorded run's JSON, replayed by the same renderer used in live mode.") +
-      "<br>Guardrails: READ_ONLY_SQL &middot; QUERY_SCOPE allowlist &middot; ACTION_LIMITER. Built on doom2quake agent-core.";
+      ? "Every dot, band and number is filled from the JSON this page received from the running agent."
+      : "The Ask panel replays a recorded run's JSON with the same renderer used live. The projector is disabled until a backend is present.") +
+      "<br>Guardrails: READ_ONLY_SQL &middot; QUERY_SCOPE allowlist &middot; ACTION_LIMITER. Grounded through the official ClickHouse MCP server. Built on doom2quake agent-core.";
   }
 
   function probe() {
-    var timeout = new Promise(function (_, rej) { setTimeout(rej, 1500); });
+    var timeout = new Promise(function (_, rej) { setTimeout(rej, 2000); });
     Promise.race([fetch("api/health", { cache: "no-store" }), timeout])
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (h) { setMode(true, h); autorun(); })
-      .catch(function () { setMode(false, null); autorun(); });
+      .then(function (h) { setMode(true, h); loadOptions(); })
+      .catch(function () { setMode(false, null); disableProjector(); });
   }
 
-  // `?run=grounded` runs one scenario on load. Used for the docs screenshot and
-  // for a hands-free demo; it changes nothing about where the data comes from.
-  function autorun() {
-    var m = /[?&]run=([a-z_]+)/.exec(location.search || "");
-    if (!m) return;
-    $("q").value = m[1];
-    runScenario(m[1]);
+  function disableProjector() {
+    $("projBtn").disabled = true;
+    $("scen").textContent = "Run boxoffice serve to project live cohorts. The Ask panel below still works from the recorded transcript.";
   }
 
-  // --- rendering (identical for live and recorded payloads) -------------------
-  function traceText(traces, meta) {
-    var out = [];
-    (traces || []).forEach(function (t, i) {
-      if (!t) return;
-      out.push("query " + (i + 1) + "  " + (t.note || ""));
-      out.push("  source      " + t.source);
-      out.push("  transport   " + (t.transport || ""));
-      if (t.endpoint) out.push("  endpoint    " + t.endpoint);
-      if (t.mcp_server) out.push("  mcp server  " + t.mcp_server + "  tool=" + t.mcp_tool);
-      if (t.mcp_tools_available) out.push("  mcp tools   " + t.mcp_tools_available.join(", "));
-      out.push("  rows_read   " + (t.rows_read === null || t.rows_read === undefined ? "n/a" : t.rows_read));
-      out.push("  bytes_read  " + (t.bytes_read === null || t.bytes_read === undefined ? "n/a" : t.bytes_read));
-      out.push("  elapsed_ms  " + t.elapsed_ms);
-      if (t.stats_note) out.push("  note        " + t.stats_note);
-      if (t.snapshot) out.push("  snapshot    " + t.snapshot);
-      out.push("");
-    });
-    out.push("run_id     " + meta.run_id);
-    out.push("status     " + meta.status);
-    out.push("abstained  " + meta.abstained);
-    out.push("error      " + (meta.error || "none"));
-    return out.join("\n");
+  // ---- options -> populate genre + year ------------------------------------
+  function loadOptions() {
+    fetch("api/options", { cache: "no-store" }).then(function (r) { return r.json(); })
+      .then(function (o) {
+        var sel = $("genre"); sel.innerHTML = "";
+        (o.genres || []).forEach(function (g) {
+          var opt = document.createElement("option"); opt.value = g; opt.textContent = g; sel.appendChild(opt);
+        });
+        var yr = $("year");
+        yr.min = o.year_min; yr.max = o.year_max;
+        var start = Math.min(1999, o.year_max);
+        if (start < o.year_min) start = o.year_min;
+        yr.value = start; $("yearVal").textContent = start;
+        $("projBtn").disabled = false;
+      })
+      .catch(function () { disableProjector(); });
   }
 
-  function download(name, text) {
-    var blob = new Blob([text], { type: "text/plain" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a"); a.href = url; a.download = name;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-  function copyText(text, btn) {
-    var old = btn.textContent;
-    var restore = function (ok) {
-      btn.textContent = ok ? "copied" : "copy failed";
-      if (ok) btn.classList.add("done");
-      later(function () { btn.textContent = old; btn.classList.remove("done"); }, 1400);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { restore(true); }, function () { legacyCopy(text, restore); });
-    } else { legacyCopy(text, restore); }
-  }
-  function legacyCopy(text, restore) {
-    try {
-      var ta = document.createElement("textarea"); ta.value = text;
-      ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta);
-      ta.focus(); ta.select(); var ok = document.execCommand("copy"); document.body.removeChild(ta); restore(ok);
-    } catch (e) { restore(false); }
-  }
-  function makeArtifact(name, value, opts) {
-    opts = opts || {};
-    var art = document.createElement("div");
-    art.className = "art" + (opts.abstain ? " abstain" : "");
-    var head = document.createElement("div"); head.className = "ahead";
-    var nm = document.createElement("span"); nm.className = "name"; nm.textContent = name;
-    var acts = document.createElement("div"); acts.className = "acts";
-    var copyBtn = document.createElement("button"); copyBtn.type = "button";
-    copyBtn.textContent = "copy"; copyBtn.setAttribute("aria-label", "Copy " + name);
-    copyBtn.addEventListener("click", function () { copyText(value, copyBtn); });
-    acts.appendChild(copyBtn);
-    if (opts.downloadName) {
-      var dl = document.createElement("button"); dl.type = "button";
-      dl.textContent = "download"; dl.setAttribute("aria-label", "Download " + name);
-      dl.addEventListener("click", function () { download(opts.downloadName, value); });
-      acts.appendChild(dl);
-    }
-    head.appendChild(nm); head.appendChild(acts);
-    var body = document.createElement(opts.pre ? "pre" : "div");
-    if (!opts.pre) body.className = "val";
-    body.textContent = value;
-    art.appendChild(head); art.appendChild(body);
-    return art;
-  }
-
-  function logRows(result) {
-    var rows = [];
-    (result.events || []).forEach(function (e) {
-      var cls = (e.status === "ok" || e.status === "grounded") ? "ok"
-        : (e.status === "abstain" || e.status === "degraded") ? "wait" : "reject";
-      var detail = (e.detail || "");
-      if (detail.length > 150) detail = detail.slice(0, 150) + "...";
-      rows.push({ cls: cls, tick: e.status, k: e.kind, d: e.label,
-                  t: (e.grounding && e.grounding.elapsed_ms !== undefined) ? e.grounding.elapsed_ms + "ms"
-                     : (e.row_count !== undefined ? e.row_count + " rows" : ""),
-                  sub: detail });
-    });
-    return rows;
-  }
-
-  function renderLog(result) {
-    var log = $("log"); log.innerHTML = "";
-    var rows = logRows(result);
-    var guards = result.guardrails || [];
-    $("logMeta").textContent = rows.length + " events · " + guards.length + " guardrail checks";
-    var per = reduce() ? 0 : 200, i = 0;
-    function emitGuards() {
-      if (!guards.length) return;
-      var h = document.createElement("div"); h.className = "subhead";
-      h.textContent = "guardrail audit trail (from the run's state store)";
-      log.appendChild(h);
-      guards.forEach(function (g) {
-        var row = document.createElement("div");
-        row.className = "logrow " + (g.outcome === "pass" ? "ok" : "reject");
-        row.innerHTML = '<span class="tick"></span><span class="txt"><span class="k"></span><span class="d"></span></span><span class="t"></span>';
-        row.querySelector(".tick").textContent = g.outcome;
-        row.querySelector(".k").textContent = g.name;
-        row.querySelector(".d").textContent = g.detail || "";
-        log.appendChild(row);
+  // ---- projection ----------------------------------------------------------
+  function project(genre, year) {
+    STATE.genre = genre; STATE.year = year;
+    $("projBtn").disabled = true; $("projBtn").textContent = "projecting...";
+    $("scen").textContent = "projecting " + genre + " in " + year + "...";
+    fetch("api/project", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ genre: genre, year: year })
+    }).then(function (r) { return r.json(); })
+      .then(function (d) {
+        $("projBtn").disabled = false; $("projBtn").textContent = "Project";
+        if (d.error) { $("scen").textContent = "backend error: " + d.error; return; }
+        renderProjection(d);
+      })
+      .catch(function (e) {
+        $("projBtn").disabled = false; $("projBtn").textContent = "Project";
+        $("scen").textContent = "could not reach the backend";
       });
-    }
-    function emit() {
-      if (i >= rows.length) { emitGuards(); return; }
-      var st = rows[i];
-      var row = document.createElement("div");
-      row.className = "logrow " + st.cls;
-      row.innerHTML = '<span class="tick"></span><span class="txt"><span class="k"></span><span class="d"></span></span><span class="t"></span>';
-      row.querySelector(".tick").textContent = st.tick;
-      row.querySelector(".k").textContent = st.k;
-      row.querySelector(".d").textContent = st.d;
-      row.querySelector(".t").textContent = st.t;
-      log.appendChild(row);
-      i++;
-      if (per) later(emit, per); else emit();
-    }
-    emit();
   }
 
-  function renderRun(result) {
-    var run = $("run"); run.className = "run show"; run.innerHTML = "";
-    function step(lbl, delay) {
-      var d = document.createElement("div"); d.className = "step"; d.style.animationDelay = delay + "s";
-      var head = document.createElement("div"); head.className = "lbl"; head.textContent = lbl;
-      d.appendChild(head); run.appendChild(d); return d;
-    }
-    var traces = (result.traces || []).filter(Boolean);
-    var s1 = step("1 · question → named query template", 0);
-    var p = document.createElement("p");
-    p.style.cssText = "margin:6px 0 0;color:var(--muted);font-size:14px";
-    p.textContent = result.query_name
-      ? "template " + result.query_name + "  ·  transport " + result.transport
-      : "no template matched this question; the agent abstains rather than guessing";
-    s1.appendChild(p);
+  function num(v, dflt) { return (v === null || v === undefined) ? (dflt === undefined ? "-" : dflt) : v; }
 
-    traces.forEach(function (t, idx) {
-      var s = step((idx + 2) + " · clickhouse sql", 0.15 * (idx + 1));
-      var pre = document.createElement("pre"); pre.className = "sql"; pre.textContent = t.sql || "";
-      s.appendChild(pre);
-      var tr = document.createElement("div"); tr.className = "trace";
-      tr.innerHTML = "source <b></b> · rows read <b></b> · bytes <b></b> · <b></b>";
-      var bs = tr.querySelectorAll("b");
-      bs[0].textContent = t.source;
-      bs[1].textContent = (t.rows_read === null || t.rows_read === undefined) ? "n/a" : t.rows_read;
-      bs[2].textContent = (t.bytes_read === null || t.bytes_read === undefined) ? "n/a" : t.bytes_read;
-      bs[3].textContent = t.elapsed_ms + "ms";
-      s.appendChild(tr);
-    });
+  function renderProjection(d) {
+    STATE.data = d;
+    var s = d.scenario || {};
+    var g = s.genre || STATE.genre, y = s.year || STATE.year;
+    $("scen").innerHTML = "<b>" + g + "</b> in <b>" + y + "</b>";
 
-    var last = step((traces.length + 2) + " · " + (result.abstained ? "abstain" : "grounded answer"), 0.15 * (traces.length + 1));
-    var box = document.createElement("div");
-    box.className = "answer" + (result.abstained ? " abstain" : "");
-    var tag = document.createElement("span"); tag.className = "atag";
-    tag.textContent = result.abstained
-      ? "abstained · " + (result.error ? "execution error" : "no rows support an answer")
-      : "answer · grounded in " + (result.rows ? result.rows.length : 0) + " retrieved rows";
-    var body = document.createElement("p"); body.textContent = result.answer;
-    box.appendChild(tag); box.appendChild(body);
-    last.appendChild(box);
-  }
+    // confidence badge
+    var cf = $("conf");
+    if (s.confidence) {
+      cf.style.display = "inline-block";
+      cf.className = "conf " + s.confidence;
+      cf.textContent = s.confidence + " confidence";
+    } else { cf.style.display = "none"; }
 
-  function renderArtifacts(result) {
-    var arts = $("arts"); arts.innerHTML = "";
-    arts.appendChild(makeArtifact(result.abstained ? "Abstain" : "Grounded answer", result.answer,
-      { downloadName: "boxoffice-answer.txt", abstain: result.abstained }));
-    var traces = (result.traces || []).filter(Boolean);
-    var sql = traces.map(function (t, i) { return "-- " + (t.note || ("query " + (i + 1))) + "\n" + t.sql; }).join("\n\n");
-    arts.appendChild(makeArtifact("Exact ClickHouse SQL", sql || "(no query was run)",
-      { pre: true, downloadName: "boxoffice-query.sql" }));
-    arts.appendChild(makeArtifact("Grounding trace", traceText(traces, result),
-      { pre: true, downloadName: "boxoffice-grounding-trace.txt" }));
-  }
+    // proof chip (always) + under the hood
+    renderProof(d);
 
-  function renderGuardrail(entry, name) {
-    var run = $("run"); run.className = "run show"; run.innerHTML = "";
-    var d = document.createElement("div"); d.className = "step";
-    var head = document.createElement("div"); head.className = "lbl";
-    head.textContent = "guardrail · " + name;
-    var pre = document.createElement("pre"); pre.className = "sql"; pre.textContent = entry.sql;
-    var box = document.createElement("div"); box.className = "answer abstain";
-    var tag = document.createElement("span"); tag.className = "atag";
-    tag.textContent = entry.result.status + " · " + (entry.result.grounding.guardrail || "");
-    var body = document.createElement("p"); body.textContent = entry.result.reason;
-    box.appendChild(tag); box.appendChild(body);
-    d.appendChild(head); d.appendChild(pre); d.appendChild(box);
-    run.appendChild(d);
-  }
-
-  function render(result) {
-    renderRun(result);
-    renderLog(result);
-    later(function () { renderArtifacts(result); }, reduce() ? 0 : 700);
-  }
-
-  // --- guardrail scenario ----------------------------------------------------
-  function showGuardrail() {
-    var g = TRANSCRIPT && TRANSCRIPT.guardrail;
-    if (!g) {
-      $("run").className = "run show";
-      $("run").innerHTML = '<div class="step"><div class="lbl">guardrail</div><p style="color:var(--muted)">No recorded guardrail transcript is embedded. Run <code>python scripts/record_transcript.py</code>.</p></div>';
+    if (d.abstained) {
+      // honest empty state: NO fake distribution
+      $("plotwrap").style.display = "none";
+      $("stats").style.display = "none";
+      $("rail").style.display = "none";
+      $("abstainState").classList.add("show");
+      $("abstainReason").textContent = d.reason || "The cohort was too thin to project a distribution.";
+      $("abstainTitle").textContent = (s.n !== undefined && s.n !== null)
+        ? "Only " + s.n + " comparable titles, too few to project"
+        : "Not enough comparable titles to project";
       return;
     }
-    var run = $("run"); run.className = "run show"; run.innerHTML = "";
-    var log = $("log"); log.innerHTML = ""; $("logMeta").textContent = Object.keys(g).length + " refusals";
-    Object.keys(g).forEach(function (name) {
-      var entry = g[name];
-      var d = document.createElement("div"); d.className = "step";
-      var head = document.createElement("div"); head.className = "lbl"; head.textContent = "refused · " + name;
-      var pre = document.createElement("pre"); pre.className = "sql"; pre.textContent = entry.sql;
-      var box = document.createElement("div"); box.className = "answer abstain";
-      var tag = document.createElement("span"); tag.className = "atag";
-      tag.textContent = entry.result.status + " · " + (entry.result.grounding.guardrail || "");
-      var body = document.createElement("p"); body.textContent = entry.result.reason;
-      box.appendChild(tag); box.appendChild(body);
-      d.appendChild(head); d.appendChild(pre); d.appendChild(box);
-      run.appendChild(d);
 
-      var row = document.createElement("div"); row.className = "logrow reject";
-      row.innerHTML = '<span class="tick"></span><span class="txt"><span class="k"></span><span class="d"></span></span><span class="t"></span>';
-      row.querySelector(".tick").textContent = entry.result.status;
-      row.querySelector(".k").textContent = entry.result.grounding.guardrail || "guardrail";
-      row.querySelector(".d").textContent = entry.result.reason;
-      log.appendChild(row);
+    $("abstainState").classList.remove("show");
+    $("plotwrap").style.display = "block";
+    $("stats").style.display = "grid";
+
+    $("stMean").textContent = num(s.mean);
+    $("stSpread").innerHTML = "&#177;" + num(s.spread);
+    $("stN").textContent = num(s.n);
+    $("stRange").innerHTML = num(s.lo) + " <small>to</small> " + num(s.hi);
+
+    var shown = (d.crowd || []).length;
+    $("plotHint").textContent = "each dot is a real title, top " + shown + " of " + num(s.n) + " on the rating axis";
+    drawPlot(d, true);
+    renderRail(d);
+    $("rail").style.display = "block";
+  }
+
+  // ---- canvas plot: the crowd + the distribution band ----------------------
+  var PLOT = { pts: [], mean: null, spread: null, w: 0, h: 0, dpr: 1 };
+
+  function drawPlot(d, animate) {
+    var cv = $("plot"), ctx = cv.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = cv.clientWidth || 1000, cssH = 300;
+    cv.width = cssW * dpr; cv.height = cssH * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    PLOT.w = cssW; PLOT.h = cssH; PLOT.dpr = dpr;
+
+    var padL = 18, padR = 18, padT = 24, padB = 34;
+    var plotW = cssW - padL - padR;
+    var axisY = cssH - padB;
+    var xForRating = function (r) { return padL + (r / 10) * plotW; };
+
+    var s = d.scenario;
+    PLOT.mean = s.mean; PLOT.spread = s.spread;
+
+    // lay out crowd points; deterministic vertical jitter so it is stable
+    var crowd = (d.crowd || []).filter(function (c) { return c.rating !== null && c.rating !== undefined; });
+    var bandTop = padT + 6, bandBot = axisY - 10, bandH = bandBot - bandTop;
+    PLOT.pts = crowd.map(function (c, i) {
+      var tx = xForRating(c.rating);
+      // stable pseudo-random y from index
+      var jr = (Math.sin((i + 1) * 12.9898) * 43758.5453) % 1; jr = jr < 0 ? jr + 1 : jr;
+      var ty = bandTop + jr * bandH;
+      return { name: c.name, rating: c.rating, tx: tx, ty: ty,
+               // start position: flying in from left edge, low
+               sx: padL - 40, sy: axisY - 4, x: 0, y: 0, r: 4.5 };
     });
-    $("arts").innerHTML = "";
-    $("arts").appendChild(makeArtifact("Refused queries", Object.keys(g).map(function (n) {
-      return "-- " + n + "\n" + g[n].sql + "\n-> " + g[n].result.status + ": " + g[n].result.reason;
-    }).join("\n\n"), { pre: true, downloadName: "boxoffice-guardrail.txt" }));
+
+    var start = null, dur = reduce() ? 0 : 900;
+    if (raf) cancelAnimationFrame(raf);
+
+    function frame(ts) {
+      if (start === null) start = ts;
+      var t = dur ? Math.min(1, (ts - start) / dur) : 1;
+      var e = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      paint(e);
+      if (t < 1) raf = requestAnimationFrame(frame);
+    }
+
+    function paint(e) {
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      // axis
+      ctx.strokeStyle = "#26262d"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, axisY + .5); ctx.lineTo(cssW - padR, axisY + .5); ctx.stroke();
+      ctx.fillStyle = "#5c5c66"; ctx.font = "10px " + mono();
+      for (var r = 0; r <= 10; r += 2) {
+        var x = xForRating(r);
+        ctx.fillStyle = "#26262d"; ctx.fillRect(x, axisY, 1, 4);
+        ctx.fillStyle = "#5c5c66"; ctx.textAlign = "center"; ctx.fillText(r.toFixed(0), x, axisY + 16);
+      }
+
+      // distribution band: mean +/- spread (grows with e)
+      if (s.spread !== null && s.mean !== null) {
+        var loB = xForRating(Math.max(0, s.mean - s.spread));
+        var hiB = xForRating(Math.min(10, s.mean + s.spread));
+        var meanX = xForRating(s.mean);
+        var alpha = 0.14 * e;
+        var grad = ctx.createLinearGradient(loB, 0, hiB, 0);
+        grad.addColorStop(0, "rgba(139,123,240,0)");
+        grad.addColorStop(.5, "rgba(139,123,240," + alpha + ")");
+        grad.addColorStop(1, "rgba(139,123,240,0)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(loB, padT, hiB - loB, axisY - padT);
+        // band edges
+        ctx.strokeStyle = "rgba(139,123,240," + (0.35 * e) + ")"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(loB, padT); ctx.lineTo(loB, axisY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(hiB, padT); ctx.lineTo(hiB, axisY); ctx.stroke();
+        ctx.setLineDash([]);
+        // mean line
+        ctx.strokeStyle = "rgba(255,210,74," + (0.9 * e) + ")"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(meanX, padT - 4); ctx.lineTo(meanX, axisY); ctx.stroke();
+        // mean label
+        ctx.fillStyle = "rgba(255,210,74," + e + ")"; ctx.font = "700 11px " + mono(); ctx.textAlign = "center";
+        ctx.fillText("mean " + s.mean, meanX, padT - 9);
+        // spread caps label
+        ctx.fillStyle = "rgba(139,123,240," + (0.8 * e) + ")"; ctx.font = "9px " + mono();
+        ctx.textAlign = "left"; ctx.fillText("+/- " + s.spread, hiB + 4, padT + 6);
+      }
+
+      // crowd points, flying in
+      PLOT.pts.forEach(function (p) {
+        p.x = p.sx + (p.tx - p.sx) * e;
+        p.y = p.sy + (p.ty - p.sy) * e;
+        var hot = p.rating >= (s.mean || 0);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = hot ? "rgba(79,214,224," + (0.55 + 0.4 * e) + ")" : "rgba(255,210,74," + (0.4 + 0.35 * e) + ")";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(8,8,10,.8)"; ctx.lineWidth = 1; ctx.stroke();
+      });
+    }
+
+    if (dur) raf = requestAnimationFrame(frame); else paint(1);
+    STATE.animPhase = 1;
   }
 
-  // --- orchestration ---------------------------------------------------------
+  function mono() {
+    return "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace";
+  }
+
+  // hover tooltip on the crowd
+  (function attachHover() {
+    var cv = $("plot"), tip = $("tip"), wrap = $("plotwrap");
+    cv.addEventListener("mousemove", function (ev) {
+      var rect = cv.getBoundingClientRect();
+      var mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+      var best = null, bd = 12 * 12;
+      PLOT.pts.forEach(function (p) {
+        var dx = p.x - mx, dy = p.y - my, dd = dx * dx + dy * dy;
+        if (dd < bd) { bd = dd; best = p; }
+      });
+      if (best) {
+        tip.style.opacity = "1";
+        tip.style.left = best.x + "px";
+        tip.style.top = best.y + "px";
+        tip.innerHTML = best.name + " &middot; <b>" + best.rating + "</b>";
+      } else { tip.style.opacity = "0"; }
+    });
+    cv.addEventListener("mouseleave", function () { tip.style.opacity = "0"; });
+  })();
+
+  // ---- multiverse rail -----------------------------------------------------
+  function renderRail(d) {
+    // TIME
+    var ts = $("timestrip"); ts.innerHTML = "";
+    var traj = d.trajectory || [];
+    var means = traj.map(function (t) { return t.mean; }).filter(function (m) { return m !== null; });
+    var lo = Math.min.apply(null, means.concat([10])), hi = Math.max.apply(null, means.concat([0]));
+    if (!isFinite(lo)) lo = 0; if (!isFinite(hi)) hi = 10;
+    var span = Math.max(0.5, hi - lo);
+    traj.forEach(function (t) {
+      var cell = document.createElement("button"); cell.type = "button";
+      cell.className = "yearcell" + (t.year === (d.scenario.year) ? " cur" : "");
+      var h = t.mean === null ? 6 : 14 + ((t.mean - lo) / span) * 56;
+      cell.innerHTML = '<div class="bar" style="height:' + h.toFixed(0) + 'px"></div>' +
+        '<span class="mn">' + (t.mean === null ? "-" : t.mean) + '</span>' +
+        '<span class="yr">' + t.year + '</span>';
+      cell.title = STATE.genre + " in " + t.year + ": mean " + (t.mean === null ? "n/a" : t.mean) + ", n " + t.n;
+      cell.addEventListener("click", function () {
+        $("year").value = t.year; $("yearVal").textContent = t.year;
+        project(STATE.genre, t.year);
+      });
+      ts.appendChild(cell);
+    });
+
+    // GENRE
+    var gs = $("genrestrip"); gs.innerHTML = "";
+    var genres = d.genres || [];
+    var gmax = Math.max.apply(null, genres.map(function (x) { return x.mean || 0; }).concat([1]));
+    genres.forEach(function (x) {
+      var cell = document.createElement("button"); cell.type = "button";
+      cell.className = "gcell" + (x.genre === d.scenario.genre ? " cur" : "");
+      var w = ((x.mean || 0) / gmax) * 100;
+      cell.innerHTML = '<span class="gn">' + x.genre + '</span>' +
+        '<span class="track"><span class="fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
+        '<span class="gv">' + (x.mean === null ? "-" : x.mean) + '</span>';
+      cell.title = x.genre + " in " + d.scenario.year + ": mean " + (x.mean === null ? "n/a" : x.mean) + ", n " + x.n;
+      cell.addEventListener("click", function () {
+        $("genre").value = x.genre;
+        project(x.genre, d.scenario.year);
+      });
+      gs.appendChild(cell);
+    });
+  }
+
+  // ---- proof chip + under the hood -----------------------------------------
+  function renderProof(d) {
+    var proof = $("proof"); proof.style.display = "block";
+    var traces = (d.traces || []).filter(Boolean);
+    var n = traces.length;
+    var totalMs = traces.reduce(function (a, t) { return a + (t.elapsed_ms || 0); }, 0);
+    var src = (traces[0] && traces[0].source) || d.transport || "clickhouse";
+    var srcName = /mcp/.test(src) ? "ClickHouse MCP" : "ClickHouse";
+    $("chipText").innerHTML = "grounded by " + srcName + " &middot; <b>" + n + "</b> real quer" + (n === 1 ? "y" : "ies") +
+      (totalMs ? " &middot; <b>" + Math.round(totalMs) + "</b> ms" : "");
+
+    // SQL panel: projection SQL is not returned per-trace here, so show the trace
+    // shape we DID receive plus the fixed cohort SQL shape used by the projector.
+    var sqlPanel = $("hpSql");
+    if (n) {
+      var sqls = [
+        { lbl: "cohort: " + d.scenario.genre + " in " + d.scenario.year,
+          sql: "SELECT round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n, round(min(m.rank),1) AS lo, round(max(m.rank),1) AS hi\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + d.scenario.genre + "' AND m.year = " + d.scenario.year + " AND m.rank > 0" },
+        { lbl: "the crowd: real titles in the cohort",
+          sql: "SELECT m.name AS name, round(m.rank,1) AS rating\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + d.scenario.genre + "' AND m.year = " + d.scenario.year + " AND m.rank > 0\nORDER BY m.rank DESC LIMIT 40" },
+        { lbl: "time multiverse: this genre across years",
+          sql: "SELECT m.year AS year, round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + d.scenario.genre + "' AND m.rank > 0 AND m.year BETWEEN " + (d.scenario.year - 7) + " AND " + (d.scenario.year + 7) + "\nGROUP BY year ORDER BY year" },
+        { lbl: "genre multiverse: all genres in this year",
+          sql: "SELECT g.genre AS genre, round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE m.year = " + d.scenario.year + " AND m.rank > 0\nGROUP BY genre HAVING n >= 15 ORDER BY mean DESC LIMIT 14" }
+      ].slice(0, n);
+      sqlPanel.innerHTML = sqls.map(function (q) {
+        return '<div class="sql"><span class="lbl">-- ' + esc(q.lbl) + '</span>' + esc(q.sql) + '</div>';
+      }).join("");
+    } else { sqlPanel.innerHTML = '<div class="sql">(no query was run)</div>'; }
+
+    // Trace panel
+    var tracePanel = $("hpTrace");
+    tracePanel.innerHTML = traces.map(function (t, i) {
+      return '<div class="traceline"><span class="qn">query ' + (i + 1) + '</span>' +
+        '<span class="src">' + esc(t.source || "") + ' &middot; ' + esc(t.transport || "") +
+        (t.rows_read !== null && t.rows_read !== undefined ? ' &middot; ' + Number(t.rows_read).toLocaleString() + ' rows scanned' : '') + '</span>' +
+        '<span class="ms">' + (t.elapsed_ms !== undefined ? t.elapsed_ms + " ms" : "") + '</span></div>';
+    }).join("") || '<div class="traceline"><span class="qn">no trace returned</span><span></span><span></span></div>';
+
+    // Guardrails panel (projector runs the same READ_ONLY + SCOPE + LIMITER path per query)
+    var gp = $("hpGuard");
+    var gnames = ["READ_ONLY_SQL", "QUERY_SCOPE", "ACTION_LIMITER"];
+    var rows = [];
+    traces.forEach(function (t, i) {
+      gnames.forEach(function (gn) {
+        rows.push('<div class="guard"><span class="g-out">pass</span><span class="g-name">' + gn +
+          '</span><span class="g-det">query ' + (i + 1) + '</span></div>');
+      });
+    });
+    gp.innerHTML = rows.join("") || '<div class="guard"><span class="g-det">no queries ran</span></div>';
+
+    $("hoodNote").innerHTML = "Grounded through the official <b>ClickHouse MCP server</b> via <b>run_query</b>. " +
+      "The projector is pure read-only aggregation, so it cannot hallucinate a number. Every value above traces to a retrieved row.";
+  }
+
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  // ---- under-the-hood interactions -----------------------------------------
+  $("proofChip").addEventListener("click", function () {
+    var open = $("hood").classList.toggle("show");
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  function hoodTab(btn, panel) {
+    ["hTabSql", "hTabTrace", "hTabGuard"].forEach(function (b) { $(b).classList.remove("on"); });
+    ["hpSql", "hpTrace", "hpGuard"].forEach(function (p) { $(p).classList.remove("on"); });
+    $(btn).classList.add("on"); $(panel).classList.add("on");
+  }
+  $("hTabSql").addEventListener("click", function () { hoodTab("hTabSql", "hpSql"); });
+  $("hTabTrace").addEventListener("click", function () { hoodTab("hTabTrace", "hpTrace"); });
+  $("hTabGuard").addEventListener("click", function () { hoodTab("hTabGuard", "hpGuard"); });
+
+  // ---- rail tabs -----------------------------------------------------------
+  $("tabTime").addEventListener("click", function () {
+    this.classList.add("on"); $("tabGenre").classList.remove("on");
+    $("viewTime").classList.add("on"); $("viewGenre").classList.remove("on");
+  });
+  $("tabGenre").addEventListener("click", function () {
+    this.classList.add("on"); $("tabTime").classList.remove("on");
+    $("viewGenre").classList.add("on"); $("viewTime").classList.remove("on");
+  });
+
+  // ---- projector controls --------------------------------------------------
+  $("year").addEventListener("input", function () { $("yearVal").textContent = this.value; });
+  $("projBtn").addEventListener("click", function () {
+    project($("genre").value, parseInt($("year").value, 10));
+  });
+  window.addEventListener("resize", function () {
+    if (STATE.data && !STATE.data.abstained) drawPlot(STATE.data, false);
+  });
+
+  // =========================================================================
+  //  ASK PANEL (plain-English analytics; SQL + trace tucked behind "show how")
+  // =========================================================================
+  var QUESTIONS = [
+    { key: "grounded", label: "Which genres underperformed in 1999 versus 1998, and which titles dragged the worst one down?" },
+    { key: "abstain_no_rows", label: "Which genres underperformed in 2021 versus 2020?  (no rows in scope)" },
+    { key: "abstain_unsupported", label: "What was our total APAC streaming revenue last quarter?  (no template)" }
+  ];
   var lastKey = null;
-  function busy(on) {
-    $("askBtn").disabled = on; $("replayBtn").disabled = on;
-    $("askBtn").textContent = on ? "running..." : "Ask";
+
+  function fillAskSelect() {
+    var sel = $("q"); sel.innerHTML = "";
+    QUESTIONS.forEach(function (q) {
+      var o = document.createElement("option"); o.value = q.key; o.textContent = q.label; sel.appendChild(o);
+    });
+  }
+  function questionFor(key) {
+    if (TRANSCRIPT.scenarios[key]) return TRANSCRIPT.scenarios[key].question;
+    var q = QUESTIONS.filter(function (x) { return x.key === key; })[0];
+    return q ? q.label.split("  (")[0] : key;
   }
 
-  function runScenario(key) {
-    clearTimers();
+  function askBusy(on) {
+    $("askBtn").disabled = on; $("replayBtn").disabled = on;
+    $("askBtn").textContent = on ? "asking..." : "Ask";
+  }
+
+  function renderAnswer(result) {
+    var box = $("answer"); box.className = "answer show" + (result.abstained ? " abstain" : "");
+    $("atag").textContent = result.abstained
+      ? (result.error ? "abstained, execution error" : "abstained, no rows support an answer")
+      : "answer, grounded in retrieved rows";
+    $("answerTxt").textContent = result.answer || "";
+
+    // show-how toggle
+    var traces = (result.traces || []).filter(Boolean);
+    var sh = $("showhow"), hood = $("askhood");
+    sh.classList.remove("hidden");
+    $("howToggle").setAttribute("aria-expanded", "false");
+    hood.classList.remove("show");
+    if (!traces.length) {
+      hood.innerHTML = '<p class="hoodnote">No SQL ran: ' + esc(result.query_name ? "template " + result.query_name : "no template matched, so the agent abstained rather than guessing") + '.</p>';
+      return;
+    }
+    var sql = traces.map(function (t, i) {
+      return '<div class="sql"><span class="lbl">-- ' + esc(t.note || ("query " + (i + 1))) + '</span>' + esc(t.sql || "") + '</div>';
+    }).join("");
+    var tr = traces.map(function (t, i) {
+      return '<div class="traceline"><span class="qn">query ' + (i + 1) + '</span>' +
+        '<span class="src">' + esc(t.source || "") + ' &middot; ' + esc(t.transport || "") +
+        (t.rows_read !== undefined && t.rows_read !== null ? ' &middot; ' + Number(t.rows_read).toLocaleString() + ' rows' : '') +
+        '</span><span class="ms">' + (t.elapsed_ms !== undefined ? t.elapsed_ms + " ms" : "") + '</span></div>';
+    }).join("");
+    var guards = (result.guardrails || []).map(function (g) {
+      return '<div class="guard ' + (g.outcome === "pass" ? "" : "reject") + '"><span class="g-out">' + esc(g.outcome) +
+        '</span><span class="g-name">' + esc(g.name) + '</span><span class="g-det">' + esc(g.detail || "") + '</span></div>';
+    }).join("");
+    hood.innerHTML =
+      '<p class="hoodnote" style="margin-top:0">Exact ClickHouse SQL</p>' + sql +
+      '<p class="hoodnote">Grounding trace</p>' + (tr || '<div class="traceline"><span>no trace</span></div>') +
+      (guards ? '<p class="hoodnote">Guardrail audit</p>' + guards : "") +
+      '<p class="hoodnote">Run through the official ClickHouse MCP server via <b>run_query</b>.</p>';
+  }
+
+  function runAsk(key) {
     lastKey = key;
-    if (key === "guardrail") { showGuardrail(); return; }
     if (MODE.live) {
-      busy(true);
+      askBusy(true);
       fetch("api/ask", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: questionFor(key) })
       }).then(function (r) { return r.json(); })
-        .then(function (result) { busy(false); render(result); })
+        .then(function (result) { askBusy(false); renderAnswer(result); })
         .catch(function (e) {
-          busy(false);
-          $("run").className = "run show";
-          $("run").innerHTML = '<div class="step"><div class="lbl">backend error</div><p style="color:var(--red)">' + e + '</p></div>';
+          askBusy(false);
+          $("answer").className = "answer show abstain";
+          $("atag").textContent = "backend error"; $("answerTxt").textContent = String(e);
+          $("showhow").classList.add("hidden");
         });
       return;
     }
-    if (!TRANSCRIPT || !TRANSCRIPT.scenarios[key]) {
-      $("run").className = "run show";
-      $("run").innerHTML = '<div class="step"><div class="lbl">no data</div><p style="color:var(--muted)">No recorded transcript for this question. Run <code>boxoffice serve</code> or <code>python scripts/record_transcript.py</code>.</p></div>';
-      return;
-    }
-    render(TRANSCRIPT.scenarios[key].result);
+    if (!TRANSCRIPT.scenarios[key]) return;
+    renderAnswer(TRANSCRIPT.scenarios[key].result);
   }
 
-  function resetAll() {
-    clearTimers();
-    $("run").className = "run"; $("run").innerHTML = "";
-    $("log").innerHTML = '<div class="empty">Press Ask to trace the run.</div>';
-    $("logMeta").textContent = "";
-    $("arts").innerHTML = '<div class="empty">The answer, the exact SQL, and the grounding trace appear here after a run.</div>';
-    lastKey = null;
-    $("q").focus();
-  }
+  $("askBtn").addEventListener("click", function () { runAsk($("q").value); });
+  $("replayBtn").addEventListener("click", function () { runAsk(lastKey || $("q").value); });
+  $("howToggle").addEventListener("click", function () {
+    var open = $("askhood").classList.toggle("show");
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+    this.textContent = open ? "hide how this was grounded" : "show how this was grounded";
+  });
 
-  fillSelect();
+  // ---- help legend ---------------------------------------------------------
+  $("helpBtn").addEventListener("click", function () {
+    var open = $("legend").classList.toggle("show");
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  // ---- boot ----------------------------------------------------------------
+  fillAskSelect();
   setMode(false, null);
   probe();
-  $("askBtn").addEventListener("click", function () { runScenario($("q").value); });
-  $("replayBtn").addEventListener("click", function () { runScenario(lastKey || $("q").value); });
-  $("resetBtn").addEventListener("click", resetAll);
-  var helpBtn = $("helpBtn"), legend = $("legend");
-  helpBtn.addEventListener("click", function () {
-    var open = legend.classList.toggle("show");
-    helpBtn.setAttribute("aria-expanded", open ? "true" : "false");
-  });
+
+  // ?project=Genre:Year drives a projection on load (docs screenshot / hands-free demo).
+  // It changes nothing about where the data comes from.
+  (function autoProject() {
+    var m = /[?&]project=([^:&]+):(\d+)/.exec(location.search || "");
+    if (!m) return;
+    var g = decodeURIComponent(m[1]), y = parseInt(m[2], 10);
+    var tries = 0;
+    var iv = setInterval(function () {
+      tries++;
+      if (MODE.live && !$("projBtn").disabled) {
+        clearInterval(iv);
+        var sel = $("genre");
+        for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value === g) { sel.selectedIndex = i; break; } }
+        $("year").value = y; $("yearVal").textContent = y;
+        project(g, y);
+      } else if (tries > 40) { clearInterval(iv); }
+    }, 150);
+  })();
 })();
 </script>

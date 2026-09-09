@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 800px; }
+  body {
+    font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
+    background:
+      radial-gradient(1000px 620px at 82% -12%, #1B1B22 0%, rgba(11,11,12,0) 60%),
+      radial-gradient(820px 520px at 4% 110%, #14171E 0%, rgba(11,11,12,0) 55%),
+      #0B0B0C;
+    color: #F2F1EC;
+    width: 1200px; height: 800px;
+    padding: 72px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .filmstrip {
+    position: absolute; top: 0; bottom: 0; left: 0; width: 26px;
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 22px, #17171B 22px 40px);
+    border-right: 1px solid #22222A;
+  }
+  .kicker {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 20px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #9A9A92; font-weight: 600;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #46C98B;
+         box-shadow: 0 0 14px #46C98B; }
+  .brand {
+    font-size: 108px; font-weight: 800; letter-spacing: -0.035em; line-height: 0.98;
+    margin-top: 10px;
+  }
+  .brand .yellow { color: #FFD634; }
+  .tagline {
+    font-size: 40px; font-weight: 600; line-height: 1.18; letter-spacing: -0.015em;
+    max-width: 940px; margin-top: 26px; color: #F2F1EC;
+  }
+  .tagline .no { color: #FFD634; }
+  .stack {
+    font-size: 25px; color: #C9C9C1; margin-top: 24px; font-weight: 500;
+  }
+  .stack b { color: #5AA9FF; font-weight: 700; }
+  .stack .ch { color: #FFD634; font-weight: 700; }
+  .card {
+    margin-top: 34px;
+    background: linear-gradient(180deg, #0F0F13 0%, #0C0C0F 100%);
+    border: 1px solid #26262E; border-radius: 14px;
+    padding: 24px 28px;
+    font-family: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+    font-size: 22px; line-height: 1.55;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    max-width: 1000px;
+  }
+  .card .prompt { color: #46C98B; }
+  .card .sql { color: #E6E6DE; }
+  .card .kw { color: #5AA9FF; }
+  .card .row { color: #FFD634; }
+  .card .comment { color: #6A6A62; }
+</style>
+</head>
+<body>
+  <div class="filmstrip"></div>
+
+  <div>
+    <div class="kicker"><span class="dot"></span> Agentic Cinema 2026 · ClickHouse track</div>
+    <div class="brand">BoxOffice <span class="yellow">Brain</span></div>
+    <div class="tagline">
+      It runs real ClickHouse SQL, and it will <span class="no">not invent</span> a box-office number.
+    </div>
+    <div class="stack">
+      <b>Gemini + ADK</b> over the official <span class="ch">ClickHouse MCP server</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div><span class="prompt">$</span> <span class="sql">run_query:</span> <span class="kw">SELECT</span> <span class="sql">g.genre,</span> <span class="kw">avg</span><span class="sql">(m.rank)</span> <span class="kw">FROM</span> <span class="sql">imdb.genres g</span></div>
+    <div><span class="sql">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="kw">JOIN</span> <span class="sql">imdb.movies m</span> <span class="kw">ON</span> <span class="sql">m.id = g.movie_id</span> <span class="kw">WHERE</span> <span class="sql">m.year = 1999 ...</span></div>
+    <div class="row">&nbsp;&nbsp;-&gt; {"genre": "War", "rating": 2.7435, "titles": 28}</div>
+    <div class="comment">&nbsp;&nbsp;-- clickhouse_mcp: elapsed_ms=1030.7 · grounded, or it abstains</div>
+  </div>
+</body>
+</html>

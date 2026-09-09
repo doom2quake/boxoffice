@@ -68,6 +68,14 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.startswith("/api/health"):
             self._json(200, _health())
             return
+        if self.path.startswith("/api/options"):
+            from .projection import options
+            try:
+                with _ask_lock:
+                    self._json(200, options())
+            except Exception as exc:  # noqa: BLE001
+                self._json(500, {"error": f"{exc.__class__.__name__}: {exc}"})
+            return
         path = self.path.split("?", 1)[0]
         name = "index.html" if path in ("/", "") else path.lstrip("/")
         target = (UI_DIR / name).resolve()
@@ -78,18 +86,36 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, target.read_bytes(), ctype)
 
     def do_POST(self):  # noqa: N802
-        if not self.path.startswith("/api/ask"):
+        path = self.path.split("?", 1)[0]
+        if path not in ("/api/ask", "/api/project"):
             self._json(404, {"error": "not found"})
             return
         length = int(self.headers.get("Content-Length") or 0)
         if length > 8192:
-            self._json(413, {"error": "question too long"})
+            self._json(413, {"error": "payload too large"})
             return
         try:
             body = json.loads(self.rfile.read(length) or b"{}")
         except json.JSONDecodeError:
             self._json(400, {"error": "invalid JSON"})
             return
+
+        if path == "/api/project":
+            genre = str(body.get("genre") or "").strip()
+            year = body.get("year")
+            if not genre or year is None:
+                self._json(400, {"error": "genre and year are required"})
+                return
+            from .projection import project
+            try:
+                with _ask_lock:
+                    out = project(genre, int(year))
+            except Exception as exc:  # noqa: BLE001
+                self._json(500, {"error": f"{exc.__class__.__name__}: {exc}"})
+                return
+            self._json(200, out)
+            return
+
         question = str(body.get("question") or "").strip()
         if not question:
             self._json(400, {"error": "question is required"})
@@ -109,8 +135,22 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def serve(port: int = 8765) -> None:
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"BoxOffice Brain UI on http://127.0.0.1:{port}  (transport={settings.transport})")
+    # Cloud Run (and most PaaS) inject the listen port via $PORT and require a
+    # bind on 0.0.0.0. Honour $PORT unless the caller passed an explicit
+    # non-default --port on the command line, and bind all interfaces when a
+    # host is provided so the container is reachable. Locally, with no $PORT and
+    # no override, this stays on 127.0.0.1:8765 exactly as before.
+    import os
+
+    env_port = os.getenv("PORT")
+    host = os.getenv("HOST", "0.0.0.0" if env_port else "127.0.0.1")
+    if port == 8765 and env_port:
+        try:
+            port = int(env_port)
+        except ValueError:
+            pass
+    httpd = ThreadingHTTPServer((host, port), Handler)
+    print(f"BoxOffice Brain UI on http://{host}:{port}  (transport={settings.transport})")
     print("Ask in the browser and every panel is filled from a real run.")
     try:
         httpd.serve_forever()

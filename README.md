@@ -4,6 +4,12 @@ A cinema-catalogue analytics agent. Ask it a question in plain English and it
 writes read-only ClickHouse SQL, runs it through **ClickHouse's own MCP server**,
 and answers with the numbers that actually came back, or tells you it cannot.
 
+**It runs real ClickHouse SQL, and it will not invent a box-office number.** Every
+figure is quoted from a row the database returned; when the rows cannot answer, it
+abstains instead of guessing.
+
+**[▶ Live demo](https://boxoffice-brain-744757588430.us-central1.run.app)**  ·  **[3-minute walkthrough](VIDEO_URL)**  ·  **[Paper (PDF)](paper/paper.pdf)**  ·  **[Deck (PDF)](deck/deck.pdf)**  ·  Gemini + ADK over the **[official ClickHouse MCP server](https://github.com/ClickHouse/mcp-clickhouse)**
+
 ```
 $ BOX_TRANSPORT=mcp boxoffice ask "which genres underperformed in 1999 vs 1998?" --no-llm
 
@@ -129,16 +135,16 @@ in the UI are real tool return values.
 ## Run it
 
 ```bash
-pip install -e ../../packages/agent-core     # the reusable ADK core
-pip install -e '.[mcp]'                      # BoxOffice Brain + MCP client
+pip install -e '.[mcp]'                      # BoxOffice Brain + MCP client (agent-core is vendored in-tree)
 
 boxoffice ask "which genres underperformed in 1999 vs 1998?" --no-llm   # offline
 BOX_TRANSPORT=mcp boxoffice ask "..." --no-llm                          # live, no key
 boxoffice mcp-check                                                     # prove MCP
 boxoffice serve                                                         # UI + JSON API
 
-# the full Gemini/ADK graph (needs GOOGLE_CLOUD_PROJECT + ADC)
-boxoffice ask "which genres underperformed in 1999 vs 1998?"
+# the full Gemini/ADK graph on Vertex: Gemini writes the SQL and calls the MCP tool
+GOOGLE_GENAI_USE_VERTEXAI=True GOOGLE_CLOUD_PROJECT=<your-project> \
+  BOX_TRANSPORT=mcp boxoffice ask "which genres underperformed in 1999 versus 1998?"
 ```
 
 ## Tests
@@ -160,12 +166,13 @@ server and check the live rows against the offline snapshot.
 
 ## What is not demonstrated
 
-Read [`HONESTY.md`](HONESTY.md). Short version: Gemini and ADK are wired and
-importable, but this build has no funded Vertex project attached, so every
-number in this repo came from the keyless grounded router rather than a model
-run; the offline snapshot covers 1998 to 1999 only; the live endpoint is a public
-playground rather than a private ClickHouse Cloud service; and there is no
-holdout evaluation yet.
+Read [`HONESTY.md`](HONESTY.md). Short version: Gemini and ADK run at runtime on
+Vertex AI, and Gemini writes the SQL and calls the MCP tool itself ([captured
+run](docs/gemini-run.txt)); the keyless router is the reproducible no-credential
+path used by the tests and screenshots; the offline snapshot covers 1998 to 1999
+only; the live endpoint is the public ClickHouse playground rather than a private
+Cloud service, so anyone can reproduce it without a key; and there is no holdout
+evaluation yet.
 
 ## Paper, deck, demo
 
