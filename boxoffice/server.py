@@ -122,12 +122,14 @@ class Handler(BaseHTTPRequestHandler):
             if not genre or year is None:
                 self._json(400, {"error": "genre and year are required"})
                 return
+            title = str(body.get("title") or "")
+            plot = str(body.get("plot") or "")
             from .projection import project
             from .narrate import narrate
             try:
                 with _ask_lock:
                     proj = project(genre, int(year))
-                    story = narrate(proj)
+                    story = narrate(proj, title, plot)
             except Exception as exc:  # noqa: BLE001
                 self._json(500, {"error": f"{exc.__class__.__name__}: {exc}"})
                 return

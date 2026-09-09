@@ -1,14 +1,30 @@
 # BoxOffice Brain
 
-A cinema-catalogue analytics agent. Ask it a question in plain English and it
-writes read-only ClickHouse SQL, runs it through **ClickHouse's own MCP server**,
-and answers with the numbers that actually came back, or tells you it cannot.
+A data-backed multiverse projector for film ideas. Pose a what-if (a genre and a
+year) and it pulls the real cohort of comparable titles from ClickHouse, shows
+them as a living crowd on the rating axis, and Gemini narrates where the idea
+would land using only the numbers that came back. Flip through parallel universes
+across years and genres and the crowd and the story re-form as you go. When a
+cohort is too thin, it abstains instead of inventing a shape. A second "Ask the
+data" tab is the direct plain-English to SQL path.
 
 **It runs real ClickHouse SQL, and it will not invent a box-office number.** Every
 figure is quoted from a row the database returned; when the rows cannot answer, it
 abstains instead of guessing.
 
 **[▶ Live demo](https://boxoffice-brain-744757588430.us-central1.run.app)**  ·  **[3-minute walkthrough](VIDEO_URL)**  ·  **[Paper (PDF)](paper/paper.pdf)**  ·  **[Deck (PDF)](deck/deck.pdf)**  ·  Gemini + ADK over the **[official ClickHouse MCP server](https://github.com/ClickHouse/mcp-clickhouse)**
+
+![The Multiverse Projector](docs/ui-projector.png)
+
+## How the projector works
+
+You pick a genre and a year and hit Project. Per scenario the agent runs four real
+read-only ClickHouse queries: the cohort (its size, mean rating, spread and range),
+the crowd of individual titles that fills the rating axis, the year trajectory that
+says whether the genre is trending up or down, and the sibling genres for the same
+year that let you jump sideways across the multiverse. Gemini reads those rows and
+writes the plain-language read; every dot, line and number on the page traces back
+to a row a query returned. If the cohort is too thin to call, it says so.
 
 ```
 $ BOX_TRANSPORT=mcp boxoffice ask "which genres underperformed in 1999 vs 1998?" --no-llm
@@ -28,8 +44,6 @@ is an association within the same cohort, not a demonstrated cause.
 
 Built for the **Agentic Cinema Blockbuster Hackathon 2026**, ClickHouse track, on
 the mandated Google Cloud stack (Gemini + ADK).
-
-![BoxOffice Brain running live over the official ClickHouse MCP server](docs/ui-live.png)
 
 ## The ClickHouse MCP server is doing the work
 

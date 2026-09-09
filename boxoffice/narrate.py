@@ -78,9 +78,26 @@ def _fallback(projection: dict[str, Any]) -> str:
             f"Confidence is {s.get('confidence')} given the sample size.")
 
 
-def narrate(projection: dict[str, Any]) -> dict[str, Any]:
-    """Return {story, by} where by is 'gemini' or 'grounded-summary'."""
+def narrate(projection: dict[str, Any], title: str = "", plot: str = "") -> dict[str, Any]:
+    """Return {story, by} where by is 'gemini' or 'grounded-summary'.
+
+    ``title`` and ``plot`` are an optional film the user is imagining. They frame
+    the read, but the model is told not to invent a rating for that specific film:
+    it would sit inside the real cohort distribution, and only the real numbers may
+    be quoted.
+    """
     facts = _facts(projection)
+    framing = ""
+    title, plot = (title or "").strip()[:120], (plot or "").strip()[:600]
+    if title or plot:
+        framing = "\n\nThe user is imagining a specific film"
+        if title:
+            framing += f' titled "{title}"'
+        if plot:
+            framing += f". Its plot: {plot}"
+        framing += (". Frame the read around this film and where it would sit inside this real "
+                    "cohort, but do not invent a rating or a box-office number for it. Only the "
+                    "real cohort numbers you were given are real.")
     try:
         from google import genai  # noqa: PLC0415
 
@@ -91,7 +108,7 @@ def narrate(projection: dict[str, Any]) -> dict[str, Any]:
         )
         resp = client.models.generate_content(
             model=settings.model_fast,
-            contents=f"{_SYSTEM}\n\nThe real data:\n{facts}\n\nWrite the read now.",
+            contents=f"{_SYSTEM}\n\nThe real data:\n{facts}{framing}\n\nWrite the read now.",
         )
         text = (getattr(resp, "text", "") or "").strip()
         if text:

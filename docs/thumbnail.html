@@ -8,82 +8,238 @@
   body {
     font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
     background:
-      radial-gradient(1000px 620px at 82% -12%, #1B1B22 0%, rgba(11,11,12,0) 60%),
-      radial-gradient(820px 520px at 4% 110%, #14171E 0%, rgba(11,11,12,0) 55%),
-      #0B0B0C;
-    color: #F2F1EC;
+      radial-gradient(1100px 680px at 84% -14%, #17181F 0%, rgba(9,9,11,0) 58%),
+      radial-gradient(900px 560px at -4% 112%, #101820 0%, rgba(9,9,11,0) 55%),
+      radial-gradient(700px 520px at 50% 60%, #0E0E14 0%, rgba(9,9,11,0) 70%),
+      #090A0C;
+    color: #F3F2ED;
     width: 1200px; height: 800px;
-    padding: 72px 80px;
+    padding: 66px 74px 58px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     position: relative;
     overflow: hidden;
   }
-  .filmstrip {
-    position: absolute; top: 0; bottom: 0; left: 0; width: 26px;
+  .grain {
+    position: absolute; inset: 0; pointer-events: none;
     background:
-      repeating-linear-gradient(to bottom, transparent 0 22px, #17171B 22px 40px);
-    border-right: 1px solid #22222A;
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.04) 50%, transparent 51%),
+      radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.03) 50%, transparent 51%);
+    opacity: 0.5;
   }
+
+  /* ---- header ---- */
   .kicker {
-    display: flex; align-items: center; gap: 14px;
-    font-size: 20px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: #9A9A92; font-weight: 600;
+    display: flex; align-items: center; gap: 13px;
+    font-size: 18px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: #8E8E86; font-weight: 700;
   }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: #46C98B;
-         box-shadow: 0 0 14px #46C98B; }
+  .logo {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid #F2CD4B;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 16px rgba(242,205,75,0.35);
+    flex: none;
+  }
+  .logo i {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #6FA8FF 0%, #7B6BE8 100%);
+    box-shadow: 0 0 8px rgba(111,168,255,0.8);
+  }
+  .kicker .name { color: #C9C9C1; }
+
   .brand {
-    font-size: 108px; font-weight: 800; letter-spacing: -0.035em; line-height: 0.98;
-    margin-top: 10px;
+    font-size: 96px; font-weight: 800; letter-spacing: -0.035em; line-height: 0.98;
+    margin-top: 20px;
   }
-  .brand .yellow { color: #FFD634; }
+  .brand .yellow { color: #F2CD4B; }
+
+  .subline {
+    font-size: 40px; font-weight: 800; letter-spacing: -0.02em; margin-top: 12px;
+    background: linear-gradient(90deg, #F5F4EF 0%, #F2CD4B 34%, #5FD3D0 62%, #8B7BE8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    width: max-content;
+  }
   .tagline {
-    font-size: 40px; font-weight: 600; line-height: 1.18; letter-spacing: -0.015em;
-    max-width: 940px; margin-top: 26px; color: #F2F1EC;
+    font-size: 26px; font-weight: 600; line-height: 1.32; letter-spacing: -0.01em;
+    margin-top: 18px; color: #E7E6E0; max-width: 640px;
   }
-  .tagline .no { color: #FFD634; }
-  .stack {
-    font-size: 25px; color: #C9C9C1; margin-top: 24px; font-weight: 500;
+  .tagline .no { color: #F2CD4B; font-weight: 800; }
+
+  /* ---- content row ---- */
+  .row {
+    display: flex; gap: 40px; align-items: flex-start;
+    margin-top: 28px; flex: 1; min-height: 0;
   }
-  .stack b { color: #5AA9FF; font-weight: 700; }
-  .stack .ch { color: #FFD634; font-weight: 700; }
-  .card {
-    margin-top: 34px;
-    background: linear-gradient(180deg, #0F0F13 0%, #0C0C0F 100%);
-    border: 1px solid #26262E; border-radius: 14px;
-    padding: 24px 28px;
-    font-family: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
-    font-size: 22px; line-height: 1.55;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
-    max-width: 1000px;
+  .left { width: 640px; flex: none; display: flex; flex-direction: column; }
+
+  .foot {
+    margin-top: auto;
+    font-size: 19px; color: #A9A9A1; font-weight: 500; line-height: 1.5;
+    max-width: 600px;
   }
-  .card .prompt { color: #46C98B; }
-  .card .sql { color: #E6E6DE; }
-  .card .kw { color: #5AA9FF; }
-  .card .row { color: #FFD634; }
-  .card .comment { color: #6A6A62; }
+  .foot b { color: #5FD3D0; font-weight: 700; }
+  .foot .g { color: #F2CD4B; font-weight: 700; }
+  .foot .ab { color: #E7E6E0; font-weight: 700; }
+
+  /* ---- chart panel ---- */
+  .chart {
+    flex: 1; align-self: stretch;
+    background: linear-gradient(180deg, #101015 0%, #0C0C10 100%);
+    border: 1px solid #24242C; border-radius: 16px;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+    padding: 22px 24px 18px;
+    position: relative;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .chart-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px;
+  }
+  .chart-title { font-size: 20px; font-weight: 700; color: #F3F2ED; letter-spacing: -0.01em; }
+  .chart-title span { color: #8E8E86; font-weight: 500; }
+  .badge {
+    font-size: 13px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: #F2CD4B; font-weight: 700;
+    border: 1px solid rgba(242,205,75,0.5); border-radius: 999px;
+    padding: 5px 13px;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  .plot {
+    flex: 1; position: relative; margin-top: 8px;
+  }
+  /* vertical drawing region for lines/dots: leaves headroom at top for caption */
+  .ghost, .band, .mean { top: 34px; bottom: 30px; }
+  /* faint multiverse variants: parallel ghost mean lines */
+  .ghost {
+    position: absolute; width: 2px;
+    background: linear-gradient(180deg, rgba(139,123,232,0.4), rgba(139,123,232,0.05));
+  }
+  .ghost.g1 { left: 44%; }
+  .ghost.g2 { left: 76%; }
+  .ghost-cap {
+    position: absolute; font-size: 12px; color: rgba(139,123,232,0.72);
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; transform: translateX(-50%);
+  }
+  /* spread band */
+  .band {
+    position: absolute;
+    left: 48%; width: 22%;
+    background: linear-gradient(180deg, rgba(139,123,232,0.16), rgba(139,123,232,0.04));
+    border-left: 2px dashed rgba(139,123,232,0.55);
+    border-right: 2px dashed rgba(139,123,232,0.55);
+  }
+  .band-cap {
+    position: absolute; top: 16px; right: 0; font-size: 12px;
+    color: #8B7BE8; font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    transform: translateX(100%);
+  }
+  /* mean line */
+  .mean {
+    position: absolute; left: 59%; width: 3px;
+    background: #F2CD4B; box-shadow: 0 0 14px rgba(242,205,75,0.55);
+  }
+  .mean-cap {
+    position: absolute; top: 12px; left: 59%; transform: translateX(-50%);
+    font-size: 14px; color: #F2CD4B; font-weight: 600;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; white-space: nowrap;
+  }
+  .dot {
+    position: absolute; border-radius: 50%;
+  }
+  .dot.c { background: #5FD3D0; box-shadow: 0 0 7px rgba(95,211,208,0.5); }
+  .dot.y { background: #F2CD4B; box-shadow: 0 0 7px rgba(242,205,75,0.45); }
+  .axis {
+    position: absolute; left: 0; right: 0; bottom: 12px; height: 1px;
+    background: #2A2A32;
+  }
+  .tick {
+    position: absolute; bottom: 0; font-size: 12px; color: #6A6A62;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; transform: translateX(-50%);
+  }
+  .microcopy {
+    position: absolute; left: 2px; bottom: 22px;
+    font-size: 12px; color: #6A6A62;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
-  <div class="filmstrip"></div>
+  <div class="grain"></div>
 
-  <div>
-    <div class="kicker"><span class="dot"></span> Agentic Cinema 2026 · ClickHouse track</div>
-    <div class="brand">BoxOffice <span class="yellow">Brain</span></div>
-    <div class="tagline">
-      It runs real ClickHouse SQL, and it will <span class="no">not invent</span> a box-office number.
+  <div class="kicker">
+    <span class="logo"><i></i></span>
+    <span class="name">BoxOffice Brain</span> &nbsp;&middot;&nbsp; ClickHouse &times; Gemini
+  </div>
+
+  <div class="brand">BoxOffice <span class="yellow">Brain</span></div>
+  <div class="subline">The Multiverse Projector</div>
+
+  <div class="row">
+    <div class="left">
+      <div class="tagline">
+        It runs real ClickHouse SQL, and it will <span class="no">not invent</span> a box-office number.
+      </div>
+      <div class="foot">
+        <b>Gemini + ADK</b> narrates real <span class="g">ClickHouse</span> cohorts,
+        and <span class="ab">abstains</span> when the data is thin.
+      </div>
     </div>
-    <div class="stack">
-      <b>Gemini + ADK</b> over the official <span class="ch">ClickHouse MCP server</span>
+
+    <div class="chart">
+      <div class="chart-head">
+        <div class="chart-title">War <span>in 1999</span></div>
+        <div class="badge">Moderate confidence</div>
+      </div>
+      <div class="plot" id="plot">
+        <div class="ghost g1"></div>
+        <div class="ghost g2"></div>
+        <div class="ghost-cap" style="left:44%; top:2px;">2001</div>
+        <div class="ghost-cap" style="left:76%; top:2px;">Drama</div>
+
+        <div class="band"><span class="band-cap">+/- 1.13</span></div>
+        <div class="mean"></div>
+        <div class="mean-cap">mean 6.08</div>
+
+        <div class="microcopy">each dot is a real title, 28 of 28</div>
+
+        <div class="axis"></div>
+        <div class="tick" style="left:0%;">0</div>
+        <div class="tick" style="left:20%;">2</div>
+        <div class="tick" style="left:40%;">4</div>
+        <div class="tick" style="left:60%;">6</div>
+        <div class="tick" style="left:80%;">8</div>
+        <div class="tick" style="left:100%;">10</div>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <div><span class="prompt">$</span> <span class="sql">run_query:</span> <span class="kw">SELECT</span> <span class="sql">g.genre,</span> <span class="kw">avg</span><span class="sql">(m.rank)</span> <span class="kw">FROM</span> <span class="sql">imdb.genres g</span></div>
-    <div><span class="sql">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="kw">JOIN</span> <span class="sql">imdb.movies m</span> <span class="kw">ON</span> <span class="sql">m.id = g.movie_id</span> <span class="kw">WHERE</span> <span class="sql">m.year = 1999 ...</span></div>
-    <div class="row">&nbsp;&nbsp;-&gt; {"genre": "War", "rating": 2.7435, "titles": 28}</div>
-    <div class="comment">&nbsp;&nbsp;-- clickhouse_mcp: elapsed_ms=1030.7 · grounded, or it abstains</div>
-  </div>
+  <script>
+    // scatter the "crowd" of comparable films across the rating axis
+    const plot = document.getElementById('plot');
+    // x is rating 0..10 mapped to 0..100%; y jittered in the vertical band
+    const pts = [
+      [3.6,0.12,'y'],[4.2,0.55,'y'],[3.1,0.78,'y'],[4.6,0.4,'y'],
+      [5.3,0.2,'y'],[5.5,0.62,'y'],[5.1,0.88,'y'],[5.8,0.34,'y'],[5.4,0.72,'y'],
+      [6.0,0.48,'c'],[6.1,0.1,'c'],[6.2,0.85,'c'],[6.05,0.66,'y'],[5.9,0.93,'y'],
+      [6.3,0.28,'c'],[6.4,0.58,'c'],[6.5,0.42,'c'],[6.6,0.18,'c'],[6.55,0.75,'c'],
+      [6.7,0.5,'c'],[6.8,0.3,'c'],[6.9,0.68,'c'],[6.85,0.88,'c'],[7.0,0.22,'c'],
+      [7.1,0.6,'c'],[7.2,0.44,'c'],[7.4,0.14,'c'],[7.5,0.8,'c']
+    ];
+    const topPad = 34, botPad = 30; // matches plot band region (top headroom for captions)
+    for (const [r,jy,cls] of pts) {
+      const d = document.createElement('div');
+      d.className = 'dot ' + cls;
+      const sz = cls === 'c' ? 11 : 12;
+      d.style.width = sz + 'px'; d.style.height = sz + 'px';
+      const xpct = (r/10)*100;
+      d.style.left = 'calc(' + xpct + '% - ' + (sz/2) + 'px)';
+      // vertical: place within [topPad+6 .. (100% - botPad - 6)]
+      d.style.top = 'calc(' + (topPad+6) + 'px + ' + jy + ' * (100% - ' + (topPad+botPad+12) + 'px))';
+      plot.appendChild(d);
+    }
+  </script>
 </body>
 </html>
