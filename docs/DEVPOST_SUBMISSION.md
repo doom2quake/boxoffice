@@ -5,36 +5,40 @@ over the official ClickHouse MCP server.
 
 ## Elevator pitch
 
-Ask a cinema-catalogue question in plain English. BoxOffice Brain writes read-only
-ClickHouse SQL, runs it through ClickHouse's own MCP server on Gemini and ADK, and
-quotes only numbers that came back in a row. When the data cannot answer, it says so.
+Explore a what-if film. BoxOffice Brain projects it against the real crowd of
+comparable titles in ClickHouse, and Gemini narrates the story of where it would
+land, with the chart to prove every number. Flip through parallel universes of
+years and genres. It never invents a figure, and when the data is too thin it
+says so.
 
 **Tagline: it runs real ClickHouse SQL, and it will not invent a box-office number.**
 
 ## The problem
 
 A studio or distributor analyst can already query a warehouse. What they cannot do
-is walk into a greenlight meeting with a number they cannot defend. General-purpose
-LLMs answer catalogue and performance questions with total confidence and invented
-figures, which is worse than useless when a real decision rides on the number. The
-pain is not "writing SQL is hard". It is "an analyst cannot ship a figure that a
-hallucination might have produced".
+is walk into a greenlight meeting with a read they can defend. General-purpose LLMs
+narrate confident, invented numbers, and a bare SQL result is a wall of rows with no
+story. The pain is not "writing SQL is hard". It is "I need a defensible read of how
+this idea would land, and I cannot trust a number a model might have made up".
 
 ## What it does
 
-You ask a question in plain English. BoxOffice Brain:
+BoxOffice Brain is a data-backed multiverse projector for film ideas. You pose a
+what-if (a genre and a year, or a plain-English scenario), and:
 
-1. plans the analysis with Gemini and describes the available ClickHouse tables,
-2. writes a single read-only SQL statement,
-3. runs it through the official ClickHouse MCP server's `run_query` tool,
-4. answers using only the rows that came back, with a grounding trace (which
-   server ran it, and the latency), and
-5. abstains when the rows cannot support an answer, naming the data it would need,
-   and separates "no data" from "the query failed".
+1. it pulls the real cohort of comparable titles from ClickHouse and shows them as a
+   living crowd settling on the rating axis, with the real mean, spread and range;
+2. **Gemini reads that real cohort and tells you the story** of where the idea would
+   land, in plain language, using only the numbers the database returned;
+3. you explore parallel universes on the multiverse rail, the same scenario across
+   years and across genres, and the crowd and the story re-form as you go;
+4. when a cohort is too thin to project, it abstains and says so instead of inventing
+   a shape.
 
-Every number on screen traces to a row the database returned. Ask something the
-data cannot answer and it refuses instead of inventing a figure. That refusal is
-the product, not a caveat.
+A second tab, "Ask the data", is the direct path: ask a question in plain English and
+Gemini writes one read-only SQL statement, runs it through the official ClickHouse MCP
+server, and answers only with rows that came back. Every dot, line, number and
+sentence traces to a real row. The refusal to invent is the product, not a caveat.
 
 ## How we built it
 

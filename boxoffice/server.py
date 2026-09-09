@@ -87,7 +87,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802
         path = self.path.split("?", 1)[0]
-        if path not in ("/api/ask", "/api/project"):
+        if path not in ("/api/ask", "/api/project", "/api/narrate"):
             self._json(404, {"error": "not found"})
             return
         length = int(self.headers.get("Content-Length") or 0)
@@ -114,6 +114,25 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(500, {"error": f"{exc.__class__.__name__}: {exc}"})
                 return
             self._json(200, out)
+            return
+
+        if path == "/api/narrate":
+            genre = str(body.get("genre") or "").strip()
+            year = body.get("year")
+            if not genre or year is None:
+                self._json(400, {"error": "genre and year are required"})
+                return
+            from .projection import project
+            from .narrate import narrate
+            try:
+                with _ask_lock:
+                    proj = project(genre, int(year))
+                    story = narrate(proj)
+            except Exception as exc:  # noqa: BLE001
+                self._json(500, {"error": f"{exc.__class__.__name__}: {exc}"})
+                return
+            self._json(200, {"scenario": proj.get("scenario"), "abstained": proj.get("abstained"),
+                             **story})
             return
 
         question = str(body.get("question") or "").strip()

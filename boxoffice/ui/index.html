@@ -54,8 +54,17 @@
   .legend li b { color:var(--text); font-weight:600; }
   .legend li::before { content:""; position:absolute; left:0; top:8px; width:7px; height:7px; border-radius:2px; background:var(--gold-dim); }
 
+  /* --- top-level tabs --- */
+  .tabs { display:inline-flex; margin-top:24px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#0f0f13; }
+  .tabs button { font-family:var(--sans); font-weight:600; font-size:14px; color:var(--muted); background:none; border:0; padding:11px 22px; cursor:pointer; display:flex; align-items:center; gap:8px; }
+  .tabs button .tdot { width:6px; height:6px; border-radius:50%; background:var(--faint); }
+  .tabs button.on { background:var(--panel2); color:var(--text); }
+  .tabs button.on .tdot { background:var(--gold); box-shadow:0 0 8px var(--gold); }
+  .tabs button:not(:last-child){ border-right:1px solid var(--line); }
+  .tabpane { display:none; } .tabpane.on { display:block; }
+
   /* --- projector console --- */
-  .console { margin-top:24px; border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#131318,#0e0e12); box-shadow:0 24px 60px -30px rgba(0,0,0,.9); overflow:hidden; }
+  .console { margin-top:16px; border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#131318,#0e0e12); box-shadow:0 24px 60px -30px rgba(0,0,0,.9); overflow:hidden; }
   .controls { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; padding:20px 22px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,rgba(139,123,240,.05),transparent); }
   .fld { display:flex; flex-direction:column; gap:7px; }
   .fld .cap { font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
@@ -73,10 +82,26 @@
   .projbtn:hover { transform:translateY(-1px); box-shadow:0 10px 26px -6px rgba(255,210,74,.6); }
   .projbtn:active { transform:translateY(0); }
   .projbtn[disabled] { opacity:.55; cursor:default; transform:none; box-shadow:none; }
-  button:focus-visible, select:focus-visible, input:focus-visible, .helpbtn:focus-visible, a:focus-visible, .chip:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  button:focus-visible, select:focus-visible, input:focus-visible, .helpbtn:focus-visible, a:focus-visible, .chip:focus-visible, .tabs button:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+  /* --- the story (Gemini narration, the centerpiece read) --- */
+  .story { padding:20px 22px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,rgba(139,123,240,.06),transparent); }
+  .story .shd { display:flex; align-items:center; gap:9px; margin-bottom:9px; }
+  .story .shd .stitle { font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+  .narrtag { display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--violet); border:1px solid #3a3560; border-radius:99px; padding:3px 9px; background:rgba(139,123,240,.08); }
+  .narrtag .spark { width:6px; height:6px; border-radius:50%; background:var(--violet); box-shadow:0 0 7px var(--violet); }
+  .narrtag.summary { color:var(--cyan); border-color:#2a4a4e; background:rgba(79,214,224,.07); }
+  .narrtag.summary .spark { background:var(--cyan); box-shadow:0 0 7px var(--cyan); }
+  .storytext { font-size:19px; line-height:1.55; color:var(--text); letter-spacing:-.005em; max-width:64ch; margin:0; font-weight:450; }
+  .storytext.dim { color:var(--muted); }
+  /* shimmer while Gemini reads */
+  .shimmer { display:grid; gap:9px; }
+  .shimmer .ln { height:15px; border-radius:6px; background:linear-gradient(90deg,#1a1a20 25%,#26262d 40%,#1a1a20 55%); background-size:280% 100%; animation:sh 1.4s ease-in-out infinite; }
+  .shimmer .ln:nth-child(1){ width:92%; } .shimmer .ln:nth-child(2){ width:98%; } .shimmer .ln:nth-child(3){ width:74%; }
+  .shimmer .reading { font-family:var(--mono); font-size:11px; color:var(--violet); letter-spacing:.04em; margin-top:2px; }
+  @keyframes sh { 0%{ background-position:180% 0; } 100%{ background-position:-80% 0; } }
 
   /* --- stage --- */
-  .stage { position:relative; padding:0; }
   .stagehd { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:16px 22px 4px; }
   .stagehd .scen { font-size:15px; color:var(--muted); }
   .stagehd .scen b { color:var(--text); font-weight:700; }
@@ -88,7 +113,7 @@
 
   .plotwrap { position:relative; margin:6px 12px 4px; }
   canvas#plot { display:block; width:100%; height:300px; }
-  .plothint { position:absolute; right:14px; top:6px; font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--faint); pointer-events:none; text-align:right; }
+  .plothint { position:absolute; left:22px; bottom:44px; max-width:44%; font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:var(--faint); pointer-events:none; line-height:1.5; }
   .tip { position:absolute; pointer-events:none; z-index:5; background:#050506; border:1px solid var(--gold-dim); border-radius:8px; padding:7px 10px; font-size:12.5px; color:var(--text); box-shadow:0 8px 24px -8px #000; transform:translate(-50%,-115%); white-space:nowrap; opacity:0; transition:opacity .12s; }
   .tip b { color:var(--gold); font-family:var(--mono); font-variant-numeric:tabular-nums; }
 
@@ -109,8 +134,9 @@
 
   /* --- multiverse rail --- */
   .rail { padding:14px 22px 20px; border-top:1px solid var(--line); }
-  .railhd { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .railhd { display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
   .railhd .lbl { font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+  .railhd .hint { font-family:var(--mono); font-size:10.5px; color:var(--faint); }
   .railtabs { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
   .railtabs button { font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:#0f0f13; border:0; padding:7px 15px; cursor:pointer; }
   .railtabs button.on { background:var(--panel2); color:var(--gold); }
@@ -151,7 +177,7 @@
 
   .hood { display:none; margin-top:14px; border:1px solid var(--line); border-radius:12px; background:#0c0c10; overflow:hidden; }
   .hood.show { display:block; }
-  .hood .htab { display:flex; border-bottom:1px solid var(--line); background:#0f0f13; }
+  .hood .htab { display:flex; border-bottom:1px solid var(--line); background:#0f0f13; flex-wrap:wrap; }
   .hood .htab button { font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:none; border:0; padding:11px 16px; cursor:pointer; border-bottom:2px solid transparent; }
   .hood .htab button.on { color:var(--gold); border-bottom-color:var(--gold); }
   .hood .hbody { padding:14px 16px; }
@@ -171,12 +197,12 @@
   .hoodnote { font-family:var(--mono); font-size:11px; color:var(--faint); margin:12px 0 0; line-height:1.7; }
   .hoodnote b { color:var(--muted); }
 
-  /* --- ask panel --- */
-  .ask { margin-top:26px; border:1px solid var(--line); border-radius:14px; background:var(--panel); overflow:hidden; }
-  .ask .askhd { padding:16px 20px 4px; }
+  /* --- ask the data tab --- */
+  .ask { border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#131318,#0e0e12); overflow:hidden; margin-top:16px; }
+  .ask .askhd { padding:18px 22px 4px; }
   .ask .askhd h2 { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin:0 0 3px; }
-  .ask .askhd p { margin:0; color:var(--muted); font-size:13.5px; }
-  .askrow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px 20px 16px; }
+  .ask .askhd p { margin:0; color:var(--muted); font-size:13.5px; max-width:64ch; }
+  .askrow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:14px 22px 18px; }
   select#q { flex:1 1 340px; background:#0f0f13; border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:14.5px; padding:11px 13px; border-radius:10px; cursor:pointer; }
   select#q:hover { border-color:var(--gold-dim); }
   button.ask-btn { font-family:var(--sans); font-weight:700; font-size:14.5px; background:var(--gold); color:#231d00; border:0; border-radius:10px; padding:11px 22px; cursor:pointer; }
@@ -184,13 +210,13 @@
   button.ask-btn[disabled] { opacity:.55; cursor:default; }
   button.ghost { font-family:var(--mono); font-size:12.5px; color:var(--muted); background:#0f0f13; border:1px solid var(--line); border-radius:10px; padding:10px 15px; cursor:pointer; }
   button.ghost:hover { color:var(--gold); border-color:var(--gold-dim); }
-  .answer { margin:0 20px; border:1px solid var(--gold-dim); background:linear-gradient(180deg,#191708,#131318); border-radius:11px; padding:15px 17px; display:none; }
+  .answer { margin:0 22px; border:1px solid var(--gold-dim); background:linear-gradient(180deg,#191708,#131318); border-radius:11px; padding:15px 17px; display:none; }
   .answer.show { display:block; }
   .answer.abstain { border-color:#5c2a2b; background:linear-gradient(180deg,#1c1010,#131318); }
   .answer .atag { font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); }
   .answer.abstain .atag { color:var(--red); }
   .answer p.txt { margin:8px 0 0; font-size:14.5px; white-space:pre-wrap; }
-  .showhow { margin:12px 20px 18px; }
+  .showhow { margin:12px 22px 20px; }
   .showhow.hidden { display:none; }
   .howtoggle { font-family:var(--mono); font-size:12px; color:var(--muted); background:none; border:1px dashed var(--line); border-radius:8px; padding:8px 13px; cursor:pointer; }
   .howtoggle:hover { color:var(--cyan); border-color:var(--cyan); }
@@ -202,7 +228,7 @@
   .how h2 { font-size:11px; font-family:var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 4px; }
   .how .cap { color:var(--faint); font-size:12px; margin:0 0 10px; font-family:var(--mono); }
   .diagram-scroll { overflow-x:auto; }
-  svg.pipeline { display:block; width:100%; min-width:640px; height:auto; }
+  svg.pipeline { display:block; width:100%; min-width:660px; height:auto; }
   .nlbl { font-family:var(--sans); font-weight:700; font-size:12.5px; fill:var(--text); }
   .nsub { font-family:var(--mono); font-size:9.5px; fill:var(--muted); }
   .elbl { font-family:var(--mono); font-size:9px; fill:var(--faint); }
@@ -228,7 +254,7 @@
   </div>
 
   <h1>The <span class="grad">Multiverse Projector</span></h1>
-  <p class="thesis">Pick a genre and a year. See the real crowd of comparable films settle onto the rating axis, then flip through parallel universes across time and across genres. Every dot, line and number is a row that ClickHouse actually returned. When a cohort is too thin to project, it says so instead of inventing a shape.</p>
+  <p class="thesis">Pick a genre and a year. Gemini reads the scenario in plain language, and the chart below proves every word with the real crowd of comparable films. Flip through parallel universes across time and across genres, and the story updates as you explore. When a cohort is too thin to call, it says so instead of inventing a shape.</p>
 
   <div class="mode" id="mode">
     <span class="dot"></span>
@@ -238,34 +264,52 @@
   <div class="legend" id="legend" role="region" aria-label="Legend">
     <h2>What am I looking at?</h2>
     <ul>
-      <li><b>Live mode</b> means this page is talking to <code>boxoffice serve</code>. Pressing Project runs real read-only ClickHouse aggregation and every dot and number is filled from that response.</li>
-      <li><b>Recorded mode</b> means the page was opened as a file with no backend, so the Ask panel replays a labelled transcript captured from a real run. The projector needs a live backend.</li>
-      <li><b>The crowd</b> is the actual comparable titles in the chosen genre and year, placed by their rating. The band is the mean plus or minus one spread across that whole cohort.</li>
-      <li><b>The multiverse rail</b> flips the same scenario across years and across sibling genres. Each flip re-projects a new real cohort.</li>
-      <li><b>Under the hood</b> holds the load-bearing proof: the exact SQL, the grounding trace, the transport, and the guardrail audit. Always one click away, never faked.</li>
+      <li><b>The story</b> is Gemini reading the real ClickHouse numbers in plain language. It is told to use only the figures it is given, so it narrates the evidence rather than inventing it. If Gemini is unreachable, a deterministic grounded summary stands in, labelled as such.</li>
+      <li><b>The chart</b> is the same numbers made visible: the real crowd of comparable titles placed by rating, with the mean and one spread drawn as a band.</li>
+      <li><b>The multiverse rail</b> flips the scenario across years and across sibling genres. Each flip re-projects a real cohort and re-narrates the story.</li>
+      <li><b>Ask the data</b> is the SQL analytics path: a plain-English question becomes read-only ClickHouse SQL, grounded in retrieved rows or an honest abstain.</li>
+      <li><b>Under the hood</b> holds the load-bearing proof: the exact SQL, the grounding trace, the transport, the guardrail audit. Always one click away, never faked.</li>
     </ul>
   </div>
 
-  <!-- ============ PROJECTOR CONSOLE ============ -->
-  <section class="console" aria-label="Multiverse Projector">
-    <div class="controls">
-      <div class="fld genre">
-        <span class="cap">Genre</span>
-        <label class="sr" for="genre">Genre</label>
-        <select id="genre"><option>loading</option></select>
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button id="tabProj" class="on" role="tab" aria-selected="true"><span class="tdot"></span>Projector</button>
+    <button id="tabAsk" role="tab" aria-selected="false"><span class="tdot"></span>Ask the data</button>
+  </div>
+
+  <!-- ============ PROJECTOR TAB ============ -->
+  <div class="tabpane on" id="paneProj" role="tabpanel">
+    <section class="console" aria-label="Multiverse Projector">
+      <div class="controls">
+        <div class="fld genre">
+          <span class="cap">Genre</span>
+          <label class="sr" for="genre">Genre</label>
+          <select id="genre"><option>loading</option></select>
+        </div>
+        <div class="fld year">
+          <span class="cap">Year</span>
+          <div class="yearrow">
+            <span class="yearval" id="yearVal">1999</span>
+            <label class="sr" for="year">Year</label>
+            <input type="range" id="year" min="1921" max="2004" value="1999" step="1">
+          </div>
+        </div>
+        <button class="projbtn" id="projBtn">Project</button>
       </div>
-      <div class="fld year">
-        <span class="cap">Year</span>
-        <div class="yearrow">
-          <span class="yearval" id="yearVal">1999</span>
-          <label class="sr" for="year">Year</label>
-          <input type="range" id="year" min="1921" max="2004" value="1999" step="1">
+
+      <!-- THE STORY: Gemini narration, the centerpiece read -->
+      <div class="story" id="story" style="display:none">
+        <div class="shd">
+          <span class="stitle">The read</span>
+          <span class="narrtag" id="narrtag" style="display:none"><span class="spark"></span><span id="narrtagText">narrated by Gemini</span></span>
+        </div>
+        <p class="storytext" id="storyText"></p>
+        <div class="shimmer" id="shimmer" style="display:none">
+          <div class="ln"></div><div class="ln"></div><div class="ln"></div>
+          <div class="reading" id="readingText">Gemini is reading the data...</div>
         </div>
       </div>
-      <button class="projbtn" id="projBtn">Project</button>
-    </div>
 
-    <div class="stage" id="stage">
       <div class="stagehd">
         <span class="scen" id="scen">Press Project to pull a real cohort from ClickHouse.</span>
         <span class="conf" id="conf" style="display:none"></span>
@@ -289,75 +333,78 @@
         <div class="stat"><div class="k">titles (n)</div><div class="v" id="stN">-</div></div>
         <div class="stat"><div class="k">range</div><div class="v" id="stRange">-</div></div>
       </div>
-    </div>
 
-    <!-- ============ MULTIVERSE RAIL ============ -->
-    <div class="rail" id="rail" style="display:none">
-      <div class="railhd">
-        <span class="lbl">Multiverse rail</span>
-        <span class="railtabs">
-          <button id="tabTime" class="on">Time</button>
-          <button id="tabGenre">Genre</button>
-        </span>
-      </div>
-      <div class="railview on" id="viewTime">
-        <div class="timestrip" id="timestrip"></div>
-      </div>
-      <div class="railview" id="viewGenre">
-        <div class="genrestrip" id="genrestrip"></div>
-      </div>
-    </div>
-
-    <!-- ============ PROOF CHIP + UNDER THE HOOD ============ -->
-    <div class="proof" id="proof" style="display:none">
-      <button class="chip" id="proofChip" aria-expanded="false" aria-controls="hood">
-        <span class="led"></span><span id="chipText">grounded by ClickHouse</span>
-        <span class="caret">&#9660;</span>
-      </button>
-      <div class="hood" id="hood">
-        <div class="htab">
-          <button id="hTabSql" class="on">SQL</button>
-          <button id="hTabTrace">Grounding trace</button>
-          <button id="hTabGuard">Guardrails</button>
+      <!-- MULTIVERSE RAIL -->
+      <div class="rail" id="rail" style="display:none">
+        <div class="railhd">
+          <span class="lbl">Multiverse rail</span>
+          <span class="railtabs">
+            <button id="railTime" class="on">Time</button>
+            <button id="railGenre">Genre</button>
+          </span>
+          <span class="hint">flip a universe to re-project and re-narrate</span>
         </div>
-        <div class="hbody">
-          <div class="hpanel on" id="hpSql"></div>
-          <div class="hpanel" id="hpTrace"></div>
-          <div class="hpanel" id="hpGuard"></div>
-          <p class="hoodnote" id="hoodNote"></p>
+        <div class="railview on" id="viewTime">
+          <div class="timestrip" id="timestrip"></div>
+        </div>
+        <div class="railview" id="viewGenre">
+          <div class="genrestrip" id="genrestrip"></div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- ============ ASK PANEL ============ -->
-  <section class="ask" aria-label="Ask in plain English">
-    <div class="askhd">
-      <h2>Ask in plain English</h2>
-      <p>The analytics agent writes read-only SQL, runs it, and grounds the answer in retrieved rows, or abstains.</p>
-    </div>
-    <div class="askrow">
-      <label class="sr" for="q">Choose a question</label>
-      <select id="q"></select>
-      <button class="ask-btn" id="askBtn">Ask</button>
-      <button class="ghost" id="replayBtn" title="Run the same question again">Replay</button>
-    </div>
-    <div class="answer" id="answer">
-      <span class="atag" id="atag"></span>
-      <p class="txt" id="answerTxt"></p>
-    </div>
-    <div class="showhow hidden" id="showhow">
-      <button class="howtoggle" id="howToggle" aria-expanded="false" aria-controls="askhood">show how this was grounded</button>
-      <div class="askhood" id="askhood"></div>
-    </div>
-  </section>
+      <!-- PROOF CHIP + UNDER THE HOOD -->
+      <div class="proof" id="proof" style="display:none">
+        <button class="chip" id="proofChip" aria-expanded="false" aria-controls="hood">
+          <span class="led"></span><span id="chipText">grounded by ClickHouse</span>
+          <span class="caret">&#9660;</span>
+        </button>
+        <div class="hood" id="hood">
+          <div class="htab">
+            <button id="hTabSql" class="on">SQL</button>
+            <button id="hTabTrace">Grounding trace</button>
+            <button id="hTabGuard">Guardrails</button>
+          </div>
+          <div class="hbody">
+            <div class="hpanel on" id="hpSql"></div>
+            <div class="hpanel" id="hpTrace"></div>
+            <div class="hpanel" id="hpGuard"></div>
+            <p class="hoodnote" id="hoodNote"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ ASK THE DATA TAB ============ -->
+  <div class="tabpane" id="paneAsk" role="tabpanel">
+    <section class="ask" aria-label="Ask the data">
+      <div class="askhd">
+        <h2>Ask the data</h2>
+        <p>A plain-English question becomes read-only ClickHouse SQL. The agent runs it, grounds the answer in the rows it retrieved, and abstains when the data cannot support a claim.</p>
+      </div>
+      <div class="askrow">
+        <label class="sr" for="q">Choose a question</label>
+        <select id="q"></select>
+        <button class="ask-btn" id="askBtn">Ask</button>
+        <button class="ghost" id="replayBtn" title="Run the same question again">Replay</button>
+      </div>
+      <div class="answer" id="answer">
+        <span class="atag" id="atag"></span>
+        <p class="txt" id="answerTxt"></p>
+      </div>
+      <div class="showhow hidden" id="showhow">
+        <button class="howtoggle" id="howToggle" aria-expanded="false" aria-controls="askhood">show how this was grounded</button>
+        <div class="askhood" id="askhood"></div>
+      </div>
+    </section>
+  </div>
 
   <!-- ============ HOW IT WORKS ============ -->
   <section class="how" aria-label="How it works">
     <h2>How it works</h2>
-    <p class="cap">genre + year &rarr; guarded read-only SQL &rarr; official ClickHouse MCP server &rarr; real cohort, or an honest abstain</p>
+    <p class="cap">genre + year &rarr; guarded read-only SQL &rarr; official ClickHouse MCP server &rarr; real cohort &rarr; Gemini reads it, the chart proves it</p>
     <div class="diagram-scroll">
-      <svg class="pipeline" viewBox="0 0 900 210" role="img" aria-label="Pipeline: a genre and year scenario becomes guarded read-only ClickHouse SQL, passes the read-only screen, table allowlist and action limiter, runs through the official ClickHouse MCP server against ClickHouse Cloud, and returns a real cohort of rows that fill the projector, or abstains when the cohort is too thin.">
+      <svg class="pipeline" viewBox="0 0 900 210" role="img" aria-label="Pipeline: a genre and year scenario becomes guarded read-only ClickHouse SQL, passes the read-only screen, table allowlist and action limiter, runs through the official ClickHouse MCP server against ClickHouse Cloud, and returns a real cohort of rows. Gemini narrates the cohort in plain language and the chart draws the same numbers, or the projector abstains when the cohort is too thin.">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0 0 L10 5 L0 10 z" fill="#5c5c66"/>
@@ -366,12 +413,13 @@
         <g fill="none" stroke="#3a3a42" stroke-width="1.5">
           <path d="M160 60 H206" marker-end="url(#arrow)"/>
           <path d="M366 60 H412" marker-end="url(#arrow)"/>
-          <path d="M560 86 V120" marker-end="url(#arrow)"/>
-          <path d="M486 150 H206" marker-end="url(#arrow)"/>
+          <path d="M608 60 H654" marker-end="url(#arrow)"/>
+          <path d="M500 86 V150 H206" marker-end="url(#arrow)"/>
         </g>
         <text class="elbl" x="222" y="52">read-only SQL</text>
         <text class="elbl" x="430" y="52">run_query</text>
-        <text class="elbl" x="300" y="142">rows + grounding trace</text>
+        <text class="elbl" x="620" y="52">rows</text>
+        <text class="elbl" x="300" y="142">real cohort</text>
         <g>
           <rect x="12" y="36" width="148" height="48" rx="9" fill="#141418" stroke="#26262d"/>
           <text class="nlbl" x="28" y="58">Scenario</text>
@@ -384,20 +432,20 @@
           <text class="nsub" x="222" y="79">ACTION_LIMITER</text>
         </g>
         <g>
-          <rect x="412" y="34" width="196" height="52" rx="9" fill="#17170a" stroke="#7a6a1e"/>
+          <rect x="412" y="34" width="196" height="52" rx="9" fill="#141418" stroke="#26262d"/>
           <ellipse cx="430" cy="55" rx="9" ry="4" fill="none" stroke="#FFD24A" stroke-width="1.3"/>
           <path d="M421 55 V72 a9 4 0 0 0 18 0 V55" fill="none" stroke="#FFD24A" stroke-width="1.3"/>
           <text class="nlbl" x="448" y="55" fill="#FFD24A">ClickHouse MCP</text>
           <text class="nsub" x="448" y="72">official mcp-clickhouse</text>
         </g>
         <g>
-          <rect x="470" y="120" width="180" height="48" rx="9" fill="#141418" stroke="#26262d"/>
-          <text class="nlbl" x="486" y="142">ClickHouse Cloud</text>
-          <text class="nsub" x="486" y="157">imdb.movies, imdb.genres</text>
+          <rect x="654" y="34" width="180" height="52" rx="9" fill="#17170a" stroke="#7a6a1e"/>
+          <text class="nlbl" x="670" y="55" fill="#FFD24A">Gemini reads it</text>
+          <text class="nsub" x="670" y="72">plain-language story</text>
         </g>
         <g>
           <rect x="12" y="126" width="180" height="48" rx="9" fill="#0f1a14" stroke="#2c4a38"/>
-          <text class="nsub" x="28" y="147" fill="#46C98B">real cohort fills the projector</text>
+          <text class="nsub" x="28" y="147" fill="#46C98B">story + chart, same numbers</text>
           <text class="nsub" x="28" y="162" fill="#5c5c66">or abstain when too thin</text>
         </g>
       </svg>
@@ -421,31 +469,14 @@
         "traces": [
           {
             "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 1999 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 1998 THEN m.rank END) AS rating_prior,\n       count(CASE WHEN m.year = 1999 THEN 1 END) AS titles_current,\n       count(CASE WHEN m.year = 1998 THEN 1 END) AS titles_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (1999, 1998) AND m.rank > 0\nGROUP BY g.genre\nHAVING count(CASE WHEN m.year = 1999 THEN 1 END) >= 20\n   AND count(CASE WHEN m.year = 1998 THEN 1 END) >= 20\nORDER BY rating_current - rating_prior ASC",
-            "rows_read": 11239,
-            "bytes_read": 244796,
-            "elapsed_ms": 8.6,
-            "source": "offline_snapshot",
-            "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
-            "note": "mean rating by genre, 1999 vs 1998",
-            "transport": "offline"
+            "rows_read": 11239, "bytes_read": 244796, "elapsed_ms": 8.6,
+            "source": "offline_snapshot", "note": "mean rating by genre, 1999 vs 1998", "transport": "offline"
           },
           {
             "sql": "SELECT m.name AS title, m.year AS year, m.rank AS rating\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE g.genre = 'War' AND m.year = 1999 AND m.rank > 0\nORDER BY m.rank ASC, m.name ASC\nLIMIT 5",
-            "rows_read": 11239,
-            "bytes_read": 244796,
-            "elapsed_ms": 2.8,
-            "source": "offline_snapshot",
-            "snapshot": "4634 imdb.movies rows + 6605 imdb.genres rows",
-            "note": "lowest-rated War titles in 1999",
-            "transport": "offline"
+            "rows_read": 11239, "bytes_read": 244796, "elapsed_ms": 2.8,
+            "source": "offline_snapshot", "note": "lowest-rated War titles in 1999", "transport": "offline"
           }
-        ],
-        "events": [
-          { "kind": "supervisor", "status": "ok", "label": "run started", "detail": "transport=offline" },
-          { "kind": "planner", "status": "ok", "label": "template genre_underperformance", "detail": "1999 vs 1998" },
-          { "kind": "analyst", "status": "ok", "label": "mean rating by genre, 1999 vs 1998", "row_count": 18 },
-          { "kind": "analyst", "status": "ok", "label": "lowest-rated War titles in 1999", "row_count": 5 },
-          { "kind": "answer", "status": "grounded", "label": "12 declining genres, worst War", "detail": "every number traces to a retrieved row" }
         ],
         "query_name": "genre_underperformance",
         "rows": [ {"genre":"War"},{"genre":"Short"},{"genre":"Musical"} ],
@@ -464,27 +495,15 @@
       "question": "Which genres underperformed in 2021 versus 2020?",
       "result": {
         "answer": "Insufficient comparable data to answer: the query ran successfully but returned no rows that answer it (mean rating by genre, 2021 vs 2020). This snapshot ends in 2004, so those years hold no rated titles to compare.",
-        "abstained": true,
-        "error": null,
+        "abstained": true, "error": null,
         "traces": [
           {
             "sql": "SELECT g.genre AS genre,\n       avg(CASE WHEN m.year = 2021 THEN m.rank END) AS rating_current,\n       avg(CASE WHEN m.year = 2020 THEN m.rank END) AS rating_prior\nFROM imdb.genres AS g\nINNER JOIN imdb.movies AS m ON m.id = g.movie_id\nWHERE m.year IN (2021, 2020) AND m.rank > 0\nGROUP BY g.genre\nHAVING count() >= 20",
-            "rows_read": 11239,
-            "bytes_read": 244796,
-            "elapsed_ms": 0.5,
-            "source": "offline_snapshot",
-            "note": "mean rating by genre, 2021 vs 2020",
-            "transport": "offline"
+            "rows_read": 11239, "bytes_read": 244796, "elapsed_ms": 0.5,
+            "source": "offline_snapshot", "note": "mean rating by genre, 2021 vs 2020", "transport": "offline"
           }
         ],
-        "events": [
-          { "kind": "supervisor", "status": "ok", "label": "run started", "detail": "transport=offline" },
-          { "kind": "analyst", "status": "ok", "label": "mean rating by genre, 2021 vs 2020", "row_count": 0 },
-          { "kind": "answer", "status": "abstain", "label": "0 comparable rows", "detail": "returned nothing that answers the question" }
-        ],
-        "query_name": "genre_underperformance",
-        "rows": [],
-        "transport": "offline",
+        "query_name": "genre_underperformance", "rows": [], "transport": "offline",
         "guardrails": [
           { "name": "READ_ONLY_SQL", "outcome": "pass", "detail": "mean rating by genre, 2021 vs 2020" },
           { "name": "QUERY_SCOPE", "outcome": "pass", "detail": "tables within imdb.* allowlist" },
@@ -496,17 +515,8 @@
       "question": "What was our total APAC streaming revenue last quarter?",
       "result": {
         "answer": "Insufficient comparable data to answer: no grounded query template matches this question.\nQuestions this agent can ground:\n  - which genres underperformed in <year> versus <prior year>\n  - the best rated titles of <year>\n  - how many titles each genre released in <year>",
-        "abstained": true,
-        "error": null,
-        "traces": [],
-        "events": [
-          { "kind": "supervisor", "status": "ok", "label": "run started", "detail": "transport=offline" },
-          { "kind": "router", "status": "abstain", "label": "no template matches", "detail": "no grounded query template matches this question" }
-        ],
-        "query_name": null,
-        "rows": [],
-        "transport": "offline",
-        "guardrails": []
+        "abstained": true, "error": null, "traces": [],
+        "query_name": null, "rows": [], "transport": "offline", "guardrails": []
       }
     }
   }
@@ -519,8 +529,14 @@
   var reduce = function () { return matchMedia("(prefers-reduced-motion: reduce)").matches; };
 
   var MODE = { live: false, health: null };
-  var STATE = { data: null, genre: null, year: null, animPhase: 1 };
+  var STATE = { data: null, genre: null, year: null };
   var raf = null;
+  var narrateSeq = 0;      // guards against out-of-order narrate responses
+  var narrateTimer = null; // debounce for rapid universe flips
+
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function num(v, dflt) { return (v === null || v === undefined) ? (dflt === undefined ? "-" : dflt) : v; }
+  function mono() { return "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace"; }
 
   // ---- mode banner (honest live / recorded) --------------------------------
   function setMode(live, health) {
@@ -530,17 +546,18 @@
     if (live) {
       $("modeHd").textContent = "live";
       var ep = health.endpoint ? health.endpoint : "offline snapshot of the same ClickHouse tables";
-      $("modeBd").innerHTML = "Connected to <b>boxoffice serve</b>. The projector runs real read-only SQL. " +
+      var narr = health.adk_importable ? "Gemini narrates each scenario. " : "";
+      $("modeBd").innerHTML = "Connected to <b>boxoffice serve</b>. The projector runs real read-only SQL. " + narr +
         "Transport <b>" + health.transport + "</b> to " + ep + ".";
     } else {
       $("modeHd").textContent = "recorded transcript, not live";
-      $("modeBd").innerHTML = "No backend on this origin. The projector needs a live backend; the Ask panel below replays a transcript captured from a real run on <b>" +
+      $("modeBd").innerHTML = "No backend on this origin. The projector and Gemini narration need a live backend; the Ask panel replays a transcript captured from a real run on <b>" +
         TRANSCRIPT.recorded_at + "</b>. Run <b>boxoffice serve</b> and reload to project live.";
     }
     $("foot").innerHTML = (live
-      ? "Every dot, band and number is filled from the JSON this page received from the running agent."
-      : "The Ask panel replays a recorded run's JSON with the same renderer used live. The projector is disabled until a backend is present.") +
-      "<br>Guardrails: READ_ONLY_SQL &middot; QUERY_SCOPE allowlist &middot; ACTION_LIMITER. Grounded through the official ClickHouse MCP server. Built on doom2quake agent-core.";
+      ? "Every dot, band and number is filled from the JSON this page received from the running agent. The story is Gemini reading those same numbers."
+      : "The Ask panel replays a recorded run's JSON with the same renderer used live. The projector and narration are disabled until a backend is present.") +
+      "<br>Guardrails: READ_ONLY_SQL &middot; QUERY_SCOPE allowlist &middot; ACTION_LIMITER. Grounded through the official ClickHouse MCP server. Narrated by Gemini on Vertex AI. Built on doom2quake agent-core.";
   }
 
   function probe() {
@@ -553,7 +570,7 @@
 
   function disableProjector() {
     $("projBtn").disabled = true;
-    $("scen").textContent = "Run boxoffice serve to project live cohorts. The Ask panel below still works from the recorded transcript.";
+    $("scen").textContent = "Run boxoffice serve to project live cohorts. The Ask the data tab still works from the recorded transcript.";
   }
 
   // ---- options -> populate genre + year ------------------------------------
@@ -574,7 +591,7 @@
       .catch(function () { disableProjector(); });
   }
 
-  // ---- projection ----------------------------------------------------------
+  // ---- projection (chart appears instantly) + narrate (story arrives) ------
   function project(genre, year) {
     STATE.genre = genre; STATE.year = year;
     $("projBtn").disabled = true; $("projBtn").textContent = "projecting...";
@@ -586,55 +603,51 @@
       .then(function (d) {
         $("projBtn").disabled = false; $("projBtn").textContent = "Project";
         if (d.error) { $("scen").textContent = "backend error: " + d.error; return; }
-        renderProjection(d);
+        renderProjection(d);           // chart instantly
+        requestNarration(genre, year, d); // story a beat later
       })
-      .catch(function (e) {
+      .catch(function () {
         $("projBtn").disabled = false; $("projBtn").textContent = "Project";
         $("scen").textContent = "could not reach the backend";
       });
   }
 
-  function num(v, dflt) { return (v === null || v === undefined) ? (dflt === undefined ? "-" : dflt) : v; }
-
   function renderProjection(d) {
     STATE.data = d;
     var s = d.scenario || {};
     var g = s.genre || STATE.genre, y = s.year || STATE.year;
-    $("scen").innerHTML = "<b>" + g + "</b> in <b>" + y + "</b>";
+    $("scen").innerHTML = "<b>" + esc(String(g)) + "</b> in <b>" + esc(String(y)) + "</b>";
 
-    // confidence badge
     var cf = $("conf");
-    if (s.confidence) {
-      cf.style.display = "inline-block";
-      cf.className = "conf " + s.confidence;
-      cf.textContent = s.confidence + " confidence";
-    } else { cf.style.display = "none"; }
+    if (s.confidence) { cf.style.display = "inline-block"; cf.className = "conf " + s.confidence; cf.textContent = s.confidence + " confidence"; }
+    else { cf.style.display = "none"; }
 
-    // proof chip (always) + under the hood
     renderProof(d);
 
     if (d.abstained) {
-      // honest empty state: NO fake distribution
       $("plotwrap").style.display = "none";
       $("stats").style.display = "none";
       $("rail").style.display = "none";
       $("abstainState").classList.add("show");
-      $("abstainReason").textContent = d.reason || "The cohort was too thin to project a distribution.";
-      $("abstainTitle").textContent = (s.n !== undefined && s.n !== null)
-        ? "Only " + s.n + " comparable titles, too few to project"
-        : "Not enough comparable titles to project";
+      var reason = d.reason || "The cohort was too thin to project a distribution.";
+      $("abstainReason").textContent = reason;
+      if (/action cap|rate|limit/i.test(reason)) {
+        $("abstainTitle").textContent = "Query budget reached for this hour"; cf.style.display = "none";
+      } else if (s.n !== undefined && s.n !== null && s.n > 0) {
+        $("abstainTitle").textContent = "Only " + s.n + " comparable titles, too few to project";
+      } else {
+        $("abstainTitle").textContent = "No comparable titles in this cohort";
+      }
       return;
     }
 
     $("abstainState").classList.remove("show");
     $("plotwrap").style.display = "block";
     $("stats").style.display = "grid";
-
     $("stMean").textContent = num(s.mean);
     $("stSpread").innerHTML = "&#177;" + num(s.spread);
     $("stN").textContent = num(s.n);
     $("stRange").innerHTML = num(s.lo) + " <small>to</small> " + num(s.hi);
-
     var shown = (d.crowd || []).length;
     $("plotHint").textContent = "each dot is a real title, top " + shown + " of " + num(s.n) + " on the rating axis";
     drawPlot(d, true);
@@ -642,8 +655,74 @@
     $("rail").style.display = "block";
   }
 
+  // ---- narration -----------------------------------------------------------
+  function showStorySlot() { $("story").style.display = "block"; }
+
+  function requestNarration(genre, year, proj) {
+    showStorySlot();
+    var seq = ++narrateSeq;
+    // instant grounded read from the projection we already have, so the slot is
+    // never empty; Gemini refines it a beat later.
+    var instant = groundedSummary(proj);
+    setStory(instant, "grounded-summary", true); // dim = provisional
+    // shimmer overlay while Gemini reads
+    if (!reduce()) { $("shimmer").style.display = "grid"; $("storyText").style.display = "none"; }
+
+    if (narrateTimer) clearTimeout(narrateTimer);
+    narrateTimer = setTimeout(function () {
+      fetch("api/narrate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ genre: genre, year: year })
+      }).then(function (r) { return r.json(); })
+        .then(function (n) {
+          if (seq !== narrateSeq) return; // a newer flip won; ignore stale story
+          $("shimmer").style.display = "none"; $("storyText").style.display = "block";
+          if (n.error || !n.story) { setStory(instant, "grounded-summary", false); return; }
+          setStory(n.story, n.by || "grounded-summary", false);
+        })
+        .catch(function () {
+          if (seq !== narrateSeq) return;
+          $("shimmer").style.display = "none"; $("storyText").style.display = "block";
+          setStory(instant, "grounded-summary", false);
+        });
+    }, 350); // debounce rapid rail flips
+  }
+
+  function setStory(text, by, provisional) {
+    var st = $("storyText");
+    st.textContent = text || "";
+    st.classList.toggle("dim", !!provisional);
+    var tag = $("narrtag");
+    tag.style.display = "inline-flex";
+    if (by === "gemini") {
+      tag.className = "narrtag"; $("narrtagText").textContent = "narrated by Gemini";
+    } else {
+      tag.className = "narrtag summary"; $("narrtagText").textContent = "grounded summary";
+    }
+  }
+
+  // deterministic instant read, from the numbers already in hand (no model call)
+  function groundedSummary(d) {
+    var s = d.scenario || {};
+    if (d.abstained) return d.reason || "The field is too thin to call this scenario.";
+    var n = s.n || 0;
+    var field = n >= 150 ? "a crowded field" : n >= 30 ? "a modest field" : "a thin field";
+    var tight = (s.spread || 9) <= 1.1 ? "a tight spread" : "a wide spread";
+    var traj = d.trajectory || [], trend = "";
+    if (traj.length >= 2 && traj[0].mean != null && traj[traj.length - 1].mean != null) {
+      trend = traj[traj.length - 1].mean > traj[0].mean ? " The genre is on a rising trajectory." : " The genre is fading over the window.";
+    }
+    var rank = "";
+    var genres = d.genres || [];
+    if (genres.length) {
+      for (var i = 0; i < genres.length; i++) { if (genres[i].genre === s.genre) { rank = " It ranks " + (i + 1) + " of " + genres.length + " genres this year."; break; } }
+    }
+    return "A " + s.genre + " film in " + s.year + " lands in " + field + ": " + n + " comparable titles, a mean rating of " +
+      s.mean + " with " + tight + " (" + s.spread + ")." + trend + rank + " Confidence is " + s.confidence + " given the sample size.";
+  }
+
   // ---- canvas plot: the crowd + the distribution band ----------------------
-  var PLOT = { pts: [], mean: null, spread: null, w: 0, h: 0, dpr: 1 };
+  var PLOT = { pts: [], mean: null, spread: null };
 
   function drawPlot(d, animate) {
     var cv = $("plot"), ctx = cv.getContext("2d");
@@ -651,125 +730,90 @@
     var cssW = cv.clientWidth || 1000, cssH = 300;
     cv.width = cssW * dpr; cv.height = cssH * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    PLOT.w = cssW; PLOT.h = cssH; PLOT.dpr = dpr;
 
     var padL = 18, padR = 18, padT = 24, padB = 34;
     var plotW = cssW - padL - padR;
     var axisY = cssH - padB;
     var xForRating = function (r) { return padL + (r / 10) * plotW; };
-
     var s = d.scenario;
     PLOT.mean = s.mean; PLOT.spread = s.spread;
 
-    // lay out crowd points; deterministic vertical jitter so it is stable
     var crowd = (d.crowd || []).filter(function (c) { return c.rating !== null && c.rating !== undefined; });
     var bandTop = padT + 6, bandBot = axisY - 10, bandH = bandBot - bandTop;
     PLOT.pts = crowd.map(function (c, i) {
       var tx = xForRating(c.rating);
-      // stable pseudo-random y from index
       var jr = (Math.sin((i + 1) * 12.9898) * 43758.5453) % 1; jr = jr < 0 ? jr + 1 : jr;
       var ty = bandTop + jr * bandH;
-      return { name: c.name, rating: c.rating, tx: tx, ty: ty,
-               // start position: flying in from left edge, low
-               sx: padL - 40, sy: axisY - 4, x: 0, y: 0, r: 4.5 };
+      return { name: c.name, rating: c.rating, tx: tx, ty: ty, sx: padL - 40, sy: axisY - 4, x: 0, y: 0, r: 4.5 };
     });
 
-    var start = null, dur = reduce() ? 0 : 900;
+    var start = null, dur = (reduce() || !animate) ? 0 : 900;
     if (raf) cancelAnimationFrame(raf);
 
     function frame(ts) {
       if (start === null) start = ts;
       var t = dur ? Math.min(1, (ts - start) / dur) : 1;
-      var e = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      var e = 1 - Math.pow(1 - t, 3);
       paint(e);
       if (t < 1) raf = requestAnimationFrame(frame);
     }
-
     function paint(e) {
       ctx.clearRect(0, 0, cssW, cssH);
-
-      // axis
       ctx.strokeStyle = "#26262d"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(padL, axisY + .5); ctx.lineTo(cssW - padR, axisY + .5); ctx.stroke();
-      ctx.fillStyle = "#5c5c66"; ctx.font = "10px " + mono();
+      ctx.font = "10px " + mono();
       for (var r = 0; r <= 10; r += 2) {
         var x = xForRating(r);
         ctx.fillStyle = "#26262d"; ctx.fillRect(x, axisY, 1, 4);
         ctx.fillStyle = "#5c5c66"; ctx.textAlign = "center"; ctx.fillText(r.toFixed(0), x, axisY + 16);
       }
-
-      // distribution band: mean +/- spread (grows with e)
       if (s.spread !== null && s.mean !== null) {
         var loB = xForRating(Math.max(0, s.mean - s.spread));
         var hiB = xForRating(Math.min(10, s.mean + s.spread));
         var meanX = xForRating(s.mean);
-        var alpha = 0.14 * e;
         var grad = ctx.createLinearGradient(loB, 0, hiB, 0);
         grad.addColorStop(0, "rgba(139,123,240,0)");
-        grad.addColorStop(.5, "rgba(139,123,240," + alpha + ")");
+        grad.addColorStop(.5, "rgba(139,123,240," + (0.14 * e) + ")");
         grad.addColorStop(1, "rgba(139,123,240,0)");
-        ctx.fillStyle = grad;
-        ctx.fillRect(loB, padT, hiB - loB, axisY - padT);
-        // band edges
+        ctx.fillStyle = grad; ctx.fillRect(loB, padT, hiB - loB, axisY - padT);
         ctx.strokeStyle = "rgba(139,123,240," + (0.35 * e) + ")"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(loB, padT); ctx.lineTo(loB, axisY); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(hiB, padT); ctx.lineTo(hiB, axisY); ctx.stroke();
         ctx.setLineDash([]);
-        // mean line
         ctx.strokeStyle = "rgba(255,210,74," + (0.9 * e) + ")"; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(meanX, padT - 4); ctx.lineTo(meanX, axisY); ctx.stroke();
-        // mean label
         ctx.fillStyle = "rgba(255,210,74," + e + ")"; ctx.font = "700 11px " + mono(); ctx.textAlign = "center";
         ctx.fillText("mean " + s.mean, meanX, padT - 9);
-        // spread caps label
         ctx.fillStyle = "rgba(139,123,240," + (0.8 * e) + ")"; ctx.font = "9px " + mono();
         ctx.textAlign = "left"; ctx.fillText("+/- " + s.spread, hiB + 4, padT + 6);
       }
-
-      // crowd points, flying in
       PLOT.pts.forEach(function (p) {
         p.x = p.sx + (p.tx - p.sx) * e;
         p.y = p.sy + (p.ty - p.sy) * e;
         var hot = p.rating >= (s.mean || 0);
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = hot ? "rgba(79,214,224," + (0.55 + 0.4 * e) + ")" : "rgba(255,210,74," + (0.4 + 0.35 * e) + ")";
-        ctx.fill();
-        ctx.strokeStyle = "rgba(8,8,10,.8)"; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fill(); ctx.strokeStyle = "rgba(8,8,10,.8)"; ctx.lineWidth = 1; ctx.stroke();
       });
     }
-
     if (dur) raf = requestAnimationFrame(frame); else paint(1);
-    STATE.animPhase = 1;
   }
 
-  function mono() {
-    return "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace";
-  }
-
-  // hover tooltip on the crowd
   (function attachHover() {
-    var cv = $("plot"), tip = $("tip"), wrap = $("plotwrap");
+    var cv = $("plot"), tip = $("tip");
     cv.addEventListener("mousemove", function (ev) {
       var rect = cv.getBoundingClientRect();
       var mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
-      var best = null, bd = 12 * 12;
-      PLOT.pts.forEach(function (p) {
-        var dx = p.x - mx, dy = p.y - my, dd = dx * dx + dy * dy;
-        if (dd < bd) { bd = dd; best = p; }
-      });
-      if (best) {
-        tip.style.opacity = "1";
-        tip.style.left = best.x + "px";
-        tip.style.top = best.y + "px";
-        tip.innerHTML = best.name + " &middot; <b>" + best.rating + "</b>";
-      } else { tip.style.opacity = "0"; }
+      var best = null, bd = 144;
+      PLOT.pts.forEach(function (p) { var dx = p.x - mx, dy = p.y - my, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; best = p; } });
+      if (best) { tip.style.opacity = "1"; tip.style.left = best.x + "px"; tip.style.top = best.y + "px"; tip.innerHTML = esc(best.name) + " &middot; <b>" + best.rating + "</b>"; }
+      else { tip.style.opacity = "0"; }
     });
     cv.addEventListener("mouseleave", function () { tip.style.opacity = "0"; });
   })();
 
-  // ---- multiverse rail -----------------------------------------------------
+  // ---- multiverse rail (flip re-projects AND re-narrates) ------------------
   function renderRail(d) {
-    // TIME
     var ts = $("timestrip"); ts.innerHTML = "";
     var traj = d.trajectory || [];
     var means = traj.map(function (t) { return t.mean; }).filter(function (m) { return m !== null; });
@@ -778,7 +822,7 @@
     var span = Math.max(0.5, hi - lo);
     traj.forEach(function (t) {
       var cell = document.createElement("button"); cell.type = "button";
-      cell.className = "yearcell" + (t.year === (d.scenario.year) ? " cur" : "");
+      cell.className = "yearcell" + (t.year === d.scenario.year ? " cur" : "");
       var h = t.mean === null ? 6 : 14 + ((t.mean - lo) / span) * 56;
       cell.innerHTML = '<div class="bar" style="height:' + h.toFixed(0) + 'px"></div>' +
         '<span class="mn">' + (t.mean === null ? "-" : t.mean) + '</span>' +
@@ -791,7 +835,6 @@
       ts.appendChild(cell);
     });
 
-    // GENRE
     var gs = $("genrestrip"); gs.innerHTML = "";
     var genres = d.genres || [];
     var gmax = Math.max.apply(null, genres.map(function (x) { return x.mean || 0; }).concat([1]));
@@ -799,7 +842,7 @@
       var cell = document.createElement("button"); cell.type = "button";
       cell.className = "gcell" + (x.genre === d.scenario.genre ? " cur" : "");
       var w = ((x.mean || 0) / gmax) * 100;
-      cell.innerHTML = '<span class="gn">' + x.genre + '</span>' +
+      cell.innerHTML = '<span class="gn">' + esc(x.genre) + '</span>' +
         '<span class="track"><span class="fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
         '<span class="gv">' + (x.mean === null ? "-" : x.mean) + '</span>';
       cell.title = x.genre + " in " + d.scenario.year + ": mean " + (x.mean === null ? "n/a" : x.mean) + ", n " + x.n;
@@ -813,8 +856,8 @@
 
   // ---- proof chip + under the hood -----------------------------------------
   function renderProof(d) {
-    var proof = $("proof"); proof.style.display = "block";
-    var traces = (d.traces || []).filter(Boolean);
+    $("proof").style.display = "block";
+    var traces = (d.traces || []).filter(function (t) { return t && (t.source || t.elapsed_ms !== undefined || t.transport); });
     var n = traces.length;
     var totalMs = traces.reduce(function (a, t) { return a + (t.elapsed_ms || 0); }, 0);
     var src = (traces[0] && traces[0].source) || d.transport || "clickhouse";
@@ -822,51 +865,42 @@
     $("chipText").innerHTML = "grounded by " + srcName + " &middot; <b>" + n + "</b> real quer" + (n === 1 ? "y" : "ies") +
       (totalMs ? " &middot; <b>" + Math.round(totalMs) + "</b> ms" : "");
 
-    // SQL panel: projection SQL is not returned per-trace here, so show the trace
-    // shape we DID receive plus the fixed cohort SQL shape used by the projector.
     var sqlPanel = $("hpSql");
-    if (n) {
+    if (n && d.scenario && d.scenario.genre) {
+      var G = d.scenario.genre, Y = d.scenario.year;
       var sqls = [
-        { lbl: "cohort: " + d.scenario.genre + " in " + d.scenario.year,
-          sql: "SELECT round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n, round(min(m.rank),1) AS lo, round(max(m.rank),1) AS hi\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + d.scenario.genre + "' AND m.year = " + d.scenario.year + " AND m.rank > 0" },
+        { lbl: "cohort: " + G + " in " + Y,
+          sql: "SELECT round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n, round(min(m.rank),1) AS lo, round(max(m.rank),1) AS hi\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + G + "' AND m.year = " + Y + " AND m.rank > 0" },
         { lbl: "the crowd: real titles in the cohort",
-          sql: "SELECT m.name AS name, round(m.rank,1) AS rating\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + d.scenario.genre + "' AND m.year = " + d.scenario.year + " AND m.rank > 0\nORDER BY m.rank DESC LIMIT 40" },
+          sql: "SELECT m.name AS name, round(m.rank,1) AS rating\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + G + "' AND m.year = " + Y + " AND m.rank > 0\nORDER BY m.rank DESC LIMIT 40" },
         { lbl: "time multiverse: this genre across years",
-          sql: "SELECT m.year AS year, round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + d.scenario.genre + "' AND m.rank > 0 AND m.year BETWEEN " + (d.scenario.year - 7) + " AND " + (d.scenario.year + 7) + "\nGROUP BY year ORDER BY year" },
+          sql: "SELECT m.year AS year, round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE g.genre = '" + G + "' AND m.rank > 0 AND m.year BETWEEN " + (Y - 7) + " AND " + (Y + 7) + "\nGROUP BY year ORDER BY year" },
         { lbl: "genre multiverse: all genres in this year",
-          sql: "SELECT g.genre AS genre, round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE m.year = " + d.scenario.year + " AND m.rank > 0\nGROUP BY genre HAVING n >= 15 ORDER BY mean DESC LIMIT 14" }
+          sql: "SELECT g.genre AS genre, round(avg(m.rank),2) AS mean, round(stddevPop(m.rank),2) AS spread,\n       count() AS n\nFROM imdb.movies m INNER JOIN imdb.genres g ON g.movie_id = m.id\nWHERE m.year = " + Y + " AND m.rank > 0\nGROUP BY genre HAVING n >= 15 ORDER BY mean DESC LIMIT 14" }
       ].slice(0, n);
       sqlPanel.innerHTML = sqls.map(function (q) {
         return '<div class="sql"><span class="lbl">-- ' + esc(q.lbl) + '</span>' + esc(q.sql) + '</div>';
       }).join("");
     } else { sqlPanel.innerHTML = '<div class="sql">(no query was run)</div>'; }
 
-    // Trace panel
-    var tracePanel = $("hpTrace");
-    tracePanel.innerHTML = traces.map(function (t, i) {
+    $("hpTrace").innerHTML = traces.map(function (t, i) {
       return '<div class="traceline"><span class="qn">query ' + (i + 1) + '</span>' +
         '<span class="src">' + esc(t.source || "") + ' &middot; ' + esc(t.transport || "") +
         (t.rows_read !== null && t.rows_read !== undefined ? ' &middot; ' + Number(t.rows_read).toLocaleString() + ' rows scanned' : '') + '</span>' +
         '<span class="ms">' + (t.elapsed_ms !== undefined ? t.elapsed_ms + " ms" : "") + '</span></div>';
     }).join("") || '<div class="traceline"><span class="qn">no trace returned</span><span></span><span></span></div>';
 
-    // Guardrails panel (projector runs the same READ_ONLY + SCOPE + LIMITER path per query)
-    var gp = $("hpGuard");
-    var gnames = ["READ_ONLY_SQL", "QUERY_SCOPE", "ACTION_LIMITER"];
-    var rows = [];
+    var gnames = ["READ_ONLY_SQL", "QUERY_SCOPE", "ACTION_LIMITER"], rows = [];
     traces.forEach(function (t, i) {
       gnames.forEach(function (gn) {
-        rows.push('<div class="guard"><span class="g-out">pass</span><span class="g-name">' + gn +
-          '</span><span class="g-det">query ' + (i + 1) + '</span></div>');
+        rows.push('<div class="guard"><span class="g-out">pass</span><span class="g-name">' + gn + '</span><span class="g-det">query ' + (i + 1) + '</span></div>');
       });
     });
-    gp.innerHTML = rows.join("") || '<div class="guard"><span class="g-det">no queries ran</span></div>';
+    $("hpGuard").innerHTML = rows.join("") || '<div class="guard"><span class="g-det">no queries ran</span></div>';
 
     $("hoodNote").innerHTML = "Grounded through the official <b>ClickHouse MCP server</b> via <b>run_query</b>. " +
-      "The projector is pure read-only aggregation, so it cannot hallucinate a number. Every value above traces to a retrieved row.";
+      "The projector is pure read-only aggregation, so it cannot hallucinate a number. Gemini narrates only these retrieved values.";
   }
-
-  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
   // ---- under-the-hood interactions -----------------------------------------
   $("proofChip").addEventListener("click", function () {
@@ -882,27 +916,34 @@
   $("hTabTrace").addEventListener("click", function () { hoodTab("hTabTrace", "hpTrace"); });
   $("hTabGuard").addEventListener("click", function () { hoodTab("hTabGuard", "hpGuard"); });
 
-  // ---- rail tabs -----------------------------------------------------------
-  $("tabTime").addEventListener("click", function () {
-    this.classList.add("on"); $("tabGenre").classList.remove("on");
+  // ---- rail sub-tabs -------------------------------------------------------
+  $("railTime").addEventListener("click", function () {
+    this.classList.add("on"); $("railGenre").classList.remove("on");
     $("viewTime").classList.add("on"); $("viewGenre").classList.remove("on");
   });
-  $("tabGenre").addEventListener("click", function () {
-    this.classList.add("on"); $("tabTime").classList.remove("on");
+  $("railGenre").addEventListener("click", function () {
+    this.classList.add("on"); $("railTime").classList.remove("on");
     $("viewGenre").classList.add("on"); $("viewTime").classList.remove("on");
   });
 
   // ---- projector controls --------------------------------------------------
   $("year").addEventListener("input", function () { $("yearVal").textContent = this.value; });
-  $("projBtn").addEventListener("click", function () {
-    project($("genre").value, parseInt($("year").value, 10));
-  });
-  window.addEventListener("resize", function () {
-    if (STATE.data && !STATE.data.abstained) drawPlot(STATE.data, false);
-  });
+  $("projBtn").addEventListener("click", function () { project($("genre").value, parseInt($("year").value, 10)); });
+  window.addEventListener("resize", function () { if (STATE.data && !STATE.data.abstained) drawPlot(STATE.data, false); });
+
+  // ---- top-level tabs ------------------------------------------------------
+  function topTab(which) {
+    var proj = which === "proj";
+    $("tabProj").classList.toggle("on", proj); $("tabProj").setAttribute("aria-selected", proj ? "true" : "false");
+    $("tabAsk").classList.toggle("on", !proj); $("tabAsk").setAttribute("aria-selected", !proj ? "true" : "false");
+    $("paneProj").classList.toggle("on", proj); $("paneAsk").classList.toggle("on", !proj);
+    if (proj && STATE.data && !STATE.data.abstained) drawPlot(STATE.data, false);
+  }
+  $("tabProj").addEventListener("click", function () { topTab("proj"); });
+  $("tabAsk").addEventListener("click", function () { topTab("ask"); });
 
   // =========================================================================
-  //  ASK PANEL (plain-English analytics; SQL + trace tucked behind "show how")
+  //  ASK THE DATA (plain-English analytics; SQL + trace behind "show how")
   // =========================================================================
   var QUESTIONS = [
     { key: "grounded", label: "Which genres underperformed in 1999 versus 1998, and which titles dragged the worst one down?" },
@@ -913,20 +954,14 @@
 
   function fillAskSelect() {
     var sel = $("q"); sel.innerHTML = "";
-    QUESTIONS.forEach(function (q) {
-      var o = document.createElement("option"); o.value = q.key; o.textContent = q.label; sel.appendChild(o);
-    });
+    QUESTIONS.forEach(function (q) { var o = document.createElement("option"); o.value = q.key; o.textContent = q.label; sel.appendChild(o); });
   }
   function questionFor(key) {
     if (TRANSCRIPT.scenarios[key]) return TRANSCRIPT.scenarios[key].question;
     var q = QUESTIONS.filter(function (x) { return x.key === key; })[0];
     return q ? q.label.split("  (")[0] : key;
   }
-
-  function askBusy(on) {
-    $("askBtn").disabled = on; $("replayBtn").disabled = on;
-    $("askBtn").textContent = on ? "asking..." : "Ask";
-  }
+  function askBusy(on) { $("askBtn").disabled = on; $("replayBtn").disabled = on; $("askBtn").textContent = on ? "asking..." : "Ask"; }
 
   function renderAnswer(result) {
     var box = $("answer"); box.className = "answer show" + (result.abstained ? " abstain" : "");
@@ -934,20 +969,17 @@
       ? (result.error ? "abstained, execution error" : "abstained, no rows support an answer")
       : "answer, grounded in retrieved rows";
     $("answerTxt").textContent = result.answer || "";
-
-    // show-how toggle
     var traces = (result.traces || []).filter(Boolean);
     var sh = $("showhow"), hood = $("askhood");
     sh.classList.remove("hidden");
     $("howToggle").setAttribute("aria-expanded", "false");
+    $("howToggle").textContent = "show how this was grounded";
     hood.classList.remove("show");
     if (!traces.length) {
       hood.innerHTML = '<p class="hoodnote">No SQL ran: ' + esc(result.query_name ? "template " + result.query_name : "no template matched, so the agent abstained rather than guessing") + '.</p>';
       return;
     }
-    var sql = traces.map(function (t, i) {
-      return '<div class="sql"><span class="lbl">-- ' + esc(t.note || ("query " + (i + 1))) + '</span>' + esc(t.sql || "") + '</div>';
-    }).join("");
+    var sql = traces.map(function (t, i) { return '<div class="sql"><span class="lbl">-- ' + esc(t.note || ("query " + (i + 1))) + '</span>' + esc(t.sql || "") + '</div>'; }).join("");
     var tr = traces.map(function (t, i) {
       return '<div class="traceline"><span class="qn">query ' + (i + 1) + '</span>' +
         '<span class="src">' + esc(t.source || "") + ' &middot; ' + esc(t.transport || "") +
@@ -1006,21 +1038,26 @@
   probe();
 
   // ?project=Genre:Year drives a projection on load (docs screenshot / hands-free demo).
-  // It changes nothing about where the data comes from.
-  (function autoProject() {
+  // ?tab=ask opens the Ask the data tab. Neither changes where data comes from.
+  (function auto() {
+    var t = /[?&]tab=ask/.exec(location.search || "");
+    if (t) topTab("ask");
     var m = /[?&]project=([^:&]+):(\d+)/.exec(location.search || "");
     if (!m) return;
     var g = decodeURIComponent(m[1]), y = parseInt(m[2], 10);
     var tries = 0;
     var iv = setInterval(function () {
       tries++;
-      if (MODE.live && !$("projBtn").disabled) {
+      var sel = $("genre");
+      var ready = MODE.live && !$("projBtn").disabled && sel.options.length > 1;
+      if (ready) {
         clearInterval(iv);
-        var sel = $("genre");
-        for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value === g) { sel.selectedIndex = i; break; } }
+        var matched = false;
+        for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value === g) { sel.selectedIndex = i; matched = true; break; } }
+        if (!matched) { var o = document.createElement("option"); o.value = g; o.textContent = g; sel.appendChild(o); sel.value = g; }
         $("year").value = y; $("yearVal").textContent = y;
         project(g, y);
-      } else if (tries > 40) { clearInterval(iv); }
+      } else if (tries > 60) { clearInterval(iv); }
     }, 150);
   })();
 })();
